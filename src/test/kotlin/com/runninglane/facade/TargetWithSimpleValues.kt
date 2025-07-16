@@ -12,24 +12,24 @@ enum class TestEnum {
 }
 
 open class TargetWithSimpleValues {
-    var id: Long? = null
-    var boolean: Boolean? = null
-    var byte: Byte? = null
-    var short: Short? = null
-    var char: Char? = null
-    var int: Int = 0
-    var long: Long? = null
-    var float: Float? = null
-    var double: Double? = null
-    var string: String? = null
-    var date: Date? = null
-    var localDate: LocalDate? = null
-    var bigInteger: BigInteger? = null
-    var bigDecimal: BigDecimal? = null
-    var blob: ByteArray? = null
-    var clob: String? = null
-    var enum: TestEnum? = null
-    var uuid: UUID? = null
-    var duration: Duration? = null
-    var instant: Instant? = null
+    open var id: Long? = null
+    open var boolean: Boolean? = null
+    open var byte: Byte? = null
+    open var short: Short? = null
+    open var char: Char? = null
+    open var int: Int = 0
+    open var long: Long? = null
+    open var float: Float? = null
+    open var double: Double? = null
+    open var string: String? = null
+    open var date: Date? = null
+    open var localDate: LocalDate? = null
+    open var bigInteger: BigInteger? = null
+    open var bigDecimal: BigDecimal? = null
+    open var blob: ByteArray? = null
+    open var clob: String? = null
+    open var enum: TestEnum? = null
+    open var uuid: UUID? = null
+    open var duration: Duration? = null
+    open var instant: Instant? = null
 }

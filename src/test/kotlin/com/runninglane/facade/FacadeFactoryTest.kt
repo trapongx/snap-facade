@@ -85,6 +85,7 @@ class FacadeFactoryTest {
         assertEquals(facade.id, delegate.id)
         assertEquals(facade.int, delegate.int)
         assertEquals(facade.long, delegate.long)
+        assertEquals(facade.long, delegate.long)
         assertThrows<UnsupportedOperationException> { facade.boolean }
         assertThrows<UnsupportedOperationException> { facade.byte }
         assertThrows<UnsupportedOperationException> { facade.short }

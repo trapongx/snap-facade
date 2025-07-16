@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import kotlin.collections.plus
 
 val javaSdkVersion: String by project
+val kotlinPoetVersion: String by project
 
 plugins {
     kotlin("jvm")
@@ -19,8 +20,9 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
+    implementation(kotlin("compiler-embeddable"))
+    implementation("com.squareup:kotlinpoet:$kotlinPoetVersion")
     testImplementation(kotlin("test"))
-
 }
 
 
