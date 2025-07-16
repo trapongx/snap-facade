@@ -1,4 +1,4 @@
-package com.runninglane.facade
+package com.runninglane.facade.test.cases.simple
 
 data class DelegateWithDifferentNullability(
     val id: Long,

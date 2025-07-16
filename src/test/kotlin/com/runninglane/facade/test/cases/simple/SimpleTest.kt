@@ -1,5 +1,7 @@
-package com.runninglane.facade
+package com.runninglane.facade.test.cases.simple
 
+import com.runninglane.facade.FacadeFactory
+import com.runninglane.facade.from
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
@@ -49,7 +51,7 @@ class SimpleTest {
             duration = Duration.ofHours(1),
             instant = Instant.now()
         )
-        val facade = FacadeFactory.default.from(delegate).to(TargetWithSimpleValues::class)
+        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithSimpleValues::class)
 
         assertEquals(delegate.id, facade.id)
         assertEquals(facade.boolean, delegate.boolean)
@@ -80,7 +82,7 @@ class SimpleTest {
             int = 100,
             long = 200L,
         )
-        val facade = FacadeFactory.default.from(delegate).to(TargetWithSimpleValues::class)
+        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithSimpleValues::class)
 
         assertEquals(facade.id, delegate.id)
         assertEquals(facade.int, delegate.int)
@@ -112,7 +114,7 @@ class SimpleTest {
             int = 100,
             long = 200L,
         )
-        val facade = FacadeFactory.default.from(delegate).to(TargetWithSimpleValues::class)
+        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithSimpleValues::class)
 
         assertEquals(facade.id, delegate.id)
         assertEquals(facade.int, delegate.int)
@@ -126,7 +128,7 @@ class SimpleTest {
             int = 100,
             long = 200L,
         )
-        val facade = FacadeFactory.default.from(delegate).to(TargetWithSimpleValues::class)
+        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithSimpleValues::class)
 
         assertEquals(facade.id, delegate.id)
         assertEquals(facade.int, delegate.int)

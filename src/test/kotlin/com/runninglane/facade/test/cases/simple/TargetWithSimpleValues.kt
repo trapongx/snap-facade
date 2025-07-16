@@ -1,4 +1,4 @@
-package com.runninglane.facade
+package com.runninglane.facade.test.cases.simple
 
 import java.math.BigDecimal
 import java.math.BigInteger
