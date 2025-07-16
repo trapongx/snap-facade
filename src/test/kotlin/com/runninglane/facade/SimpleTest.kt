@@ -10,7 +10,7 @@ import java.time.LocalDate
 import java.util.*
 import kotlin.test.assertEquals
 
-class FacadeFactoryTest {
+class SimpleTest {
     data class DelegateAsInnerInterface(
         val id: Long,
         var int: Int?,
