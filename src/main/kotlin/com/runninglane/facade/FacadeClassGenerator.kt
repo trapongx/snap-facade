@@ -4,12 +4,13 @@ import com.runninglane.facade.bytecode.compile.CompilationSession
 import com.runninglane.facade.naming.DefaultNamingStrategy
 import com.runninglane.facade.naming.NamingStrategy
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KType
+import kotlin.reflect.KTypeParameter
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.javaGetter
 
 class FacadeClassGenerator(
     val annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet()
@@ -27,14 +28,17 @@ class FacadeClassGenerator(
 
     // Collection type classes that need special handling
     private val collectionTypes = setOf(
-        List::class.java.name,
-        Set::class.java.name,
-        Map::class.java.name,
-        Collection::class.java.name,
-        Iterable::class.java.name,
-        Sequence::class.java.name,
-        Array::class.java.name
-    )
+        List::class,
+        Set::class,
+        Map::class
+    ).flatMap { listOf(it.qualifiedName, it.java.canonicalName) }.toSet()
+
+    // Mutable collection type classes
+    private val mutableCollectionTypes = setOf(
+        MutableList::class,
+        MutableSet::class,
+        MutableMap::class
+    ).flatMap { listOf(it.qualifiedName, it.java.canonicalName) }.toSet()
 
     fun generate(targetClass: KClass<*>, delegateClass: KClass<*>): KClass<*> {
         val facadeClassName = namingStrategy.buildClassName(targetClass.java, delegateClass.java)
@@ -63,7 +67,7 @@ class FacadeClassGenerator(
             try {
                 val className = typeName.substring(6)
                 return Class.forName(className).isEnum
-            } catch (e: ClassNotFoundException) {
+            } catch (_: ClassNotFoundException) {
                 // If class not found, it's not a simple type
                 return false
             }
@@ -77,24 +81,64 @@ class FacadeClassGenerator(
      */
     private fun isCollectionType(type: KType): Boolean {
         val typeName = type.classifier.toString()
-        if (typeName.startsWith("class ")) {
-            val className = typeName.substring(6)
+
+        // Check for collection names as plain interfaces/classes (not prefixed with 'class')
+        val collectionNames = listOf("List", "Set")
+        if (collectionNames.any { typeName.endsWith(it) }) {
+            return true
+        }
+
+        if (typeName.startsWith("class ") || typeName.startsWith("interface ")) {
+            val prefix = if (typeName.startsWith("class ")) "class " else "interface "
+            val className = typeName.substring(prefix.length)
 
             // Direct match with known collection types
-            if (className in collectionTypes) {
+            if (className in collectionTypes || className in mutableCollectionTypes) {
                 return true
             }
 
             // Check interfaces safely
             try {
                 val clazz = Class.forName(className)
-                return clazz.interfaces.any { i -> i.name in collectionTypes }
-            } catch (e: ClassNotFoundException) {
+                return clazz.interfaces.any { i -> 
+                    i.name in collectionTypes || i.name in mutableCollectionTypes 
+                }
+            } catch (_: ClassNotFoundException) {
                 // If class not found, assume it's not a collection
                 return false
             }
         }
         return false
+    }
+
+    /**
+     * Determines if a type is a specific kind of collection (List, Set, Map, etc.)
+     */
+    private fun getCollectionTypeCategory(type: KType): String? {
+        val typeName = type.classifier.toString()
+        if (typeName.startsWith("class ") || typeName.startsWith("interface ")) {
+            val prefix = if (typeName.startsWith("class ")) "class " else "interface "
+            val className = typeName.substring(prefix.length)
+
+            // Check if it's a List, Set, Map, etc.
+            return when {
+                className.contains("List") -> "List"
+                className.contains("Set") -> "Set"
+                else -> null
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * Checks if a property's return type string indicates it's a mutable or immutable collection
+     */
+    private fun isMutableCollectionType(property: kotlin.reflect.KProperty1<*, *>): Boolean {
+        val returnTypeStr = property.returnType.toString()
+
+        return returnTypeStr.contains("kotlin.collections.MutableList") ||
+                returnTypeStr.contains("kotlin.collections.MutableSet")
     }
 
     /**
@@ -105,28 +149,6 @@ class FacadeClassGenerator(
         return targetType.classifier == delegateType.classifier
     }
 
-    /**
-     * This function use KotlinPoet to generate a class.
-     * This class's package name is facadePackageName, class name is facadeClassName.
-     * It has one constructor accepting a parameter of type delegateClass declared as public immutable property named `delegate`.
-     * It extends or implements the targetClass.
-     * For each of the properties in targetClass, if the property of the same name exist in delegateClass,
-     * and if it does not have annotation listed in annotationForPropertyInheriting,
-     * the generated class will override the property like this
-     *
-     * var propertyName: propertyType
-     *      get() { delegate.propertyName }
-     *      set(_) { error("Making change to propertyName in facade of $targetClass is not allowed") }
-     *
-     * However, if the property is immutable, just use `val` instead of `var` and omit the setter.
-     *
-     * For all other properties, if they are concrete, just do nothing, which means just to inherit them as they are.
-     * But if any of them are abstract, throw FacadeGenerationException with the message informing about problematic
-     * property names. Also, if there's abstract methods, they will not be implemented also,
-     * add their name in the list in the error message.
-     * 
-     * If things go well, build it as source code and return as string.
-     */
     private fun generateSourceCode(
         targetClass: KClass<*>,
         delegateClass: KClass<*>,
@@ -171,18 +193,15 @@ class FacadeClassGenerator(
         for (targetProperty in targetProperties) {
             val delegateProperty = delegateProperties[targetProperty.name]
 
-            // Check if property is abstract
-            val isAbstract = targetProperty.javaGetter?.modifiers?.let { java.lang.reflect.Modifier.isAbstract(it) } ?: false
-
             // Check if the property should be excluded from overriding
             val shouldExclude = targetProperty.annotations.any { it.annotationClass in annotationForPropertyInheriting }
 
             if (!shouldExclude) {
+                val isPropertyMutable = targetProperty is KMutableProperty<*>
+                val resolvedPropertyTypeName = resolveTypeName(targetProperty.returnType, emptyMap())
+
                 // Case 1: Property exists in delegate class - override it with delegation
                 if (delegateProperty != null) {
-                    val isMutable = targetProperty is KMutableProperty<*>
-                    val returnType = targetProperty.returnType.asTypeName()
-
                     // Check nullability
                     val isDelegateNullable = delegateProperty.returnType.isMarkedNullable
                     val isTargetNullable = targetProperty.returnType.isMarkedNullable
@@ -190,48 +209,67 @@ class FacadeClassGenerator(
                     // Check type compatibility
                     val targetType = targetProperty.returnType
                     val delegateType = delegateProperty.returnType
+                    val isTargetTypeCollection = isCollectionType(targetType)
+                    val isDelegateTypeCollection = isCollectionType(delegateType)
+                    val isTargetTypeSimple = !isTargetTypeCollection && isSimpleType(targetType)
+                    val isDelegateTypeSimple = !isDelegateTypeCollection && isSimpleType(delegateType)
 
                     // Generate getter based on property type and nullability
                     val getterBuilder = FunSpec.getterBuilder()
 
-                    // Handle collection types
-                    if (isCollectionType(targetType) || isCollectionType(delegateType)) {
-                        throw FacadeGenerationException("Delegation of collection type is not yet supported. Property name: ${targetProperty.name}, Target class: $targetClass, Delegate class: $delegateClass")
-                    }
-                    // Handle simple types
-                    else if (isSimpleType(targetType) && isSimpleType(delegateType)) {
-                        // For simple values, types must match exactly
-                        if (targetType.classifier != delegateType.classifier) {
-                            throw FacadeGenerationException("Cannot create facade for property with different simple types. Property name: ${targetProperty.name}, Target class: $targetClass, Delegate class: $delegateClass")
+                    // Handle collections that need element type mapping and/or mutability conversion
+                    if (isTargetTypeCollection && isDelegateTypeCollection) {
+                        val targetCollectionTypeCategory = getCollectionTypeCategory(targetType)
+                        val delegateCollectionTypeCategory = getCollectionTypeCategory(delegateType)
+
+                        if (targetCollectionTypeCategory != delegateCollectionTypeCategory) {
+                            throw FacadeGenerationException("Cannot create facade for property with different collection types. Property name: ${targetProperty.name}, Target type: $targetCollectionTypeCategory, Delegate type: $delegateCollectionTypeCategory")
                         }
 
-                        // Handle nullability
-                        if (isDelegateNullable && !isTargetNullable) {
-                            getterBuilder.addStatement("return delegate.${targetProperty.name} ?: throw NullPointerException(%S)", "${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass")
-                        } else {
-                            getterBuilder.addStatement("return delegate.${targetProperty.name}")
-                        }
-                    }
-                    // Handle same complex types
-                    else if (areTypesCompatible(targetType, delegateType)) {
-                        // Same complex type - direct mapping
-                        if (isDelegateNullable && !isTargetNullable) {
-                            getterBuilder.addStatement("return delegate.${targetProperty.name} ?: throw NullPointerException(%S)", "${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass")
-                        } else {
-                            getterBuilder.addStatement("return delegate.${targetProperty.name}")
-                        }
-                    }
-                    // Handle different complex types - create facade for them
-                    else {
-                        // Extract just the simple class name for the reified to() call
-                        val targetTypeStr = targetType.classifier.toString()
-                        val targetSimpleName = if (targetTypeStr.startsWith("class ")) {
-                            val fullClassName = targetTypeStr.substring(6)
-                            fullClassName.substringAfterLast('.')
-                        } else {
-                            targetTypeStr
-                        }
+                        // Check if element types are different - use a more reliable approach
+                        val hasDifferentElementTypes =
+                            targetType.arguments.isNotEmpty() && delegateType.arguments.isNotEmpty() &&
+                                    targetType.arguments[0].type?.classifier != delegateType.arguments[0].type?.classifier
 
+                        val isTargetCollectionMutable = isMutableCollectionType(targetProperty)
+                        val isDelegateCollectionMutable = isMutableCollectionType(delegateProperty)
+
+                        val nullSafety = if (isDelegateNullable) "?" else ""
+                        val returnExpression = buildString {
+                            append("return delegate.${targetProperty.name}")
+                            var isCurrentExpressionMutable = isDelegateCollectionMutable
+                            var currentCollectionTypeCategory = delegateCollectionTypeCategory
+                            if (hasDifferentElementTypes) {
+                                val resolvedTargetElementType = resolveTypeName(targetType.arguments[0].type!!, emptyMap())
+                                append("$nullSafety.map { facadeFactory.from(it).to($resolvedTargetElementType::class) }")
+                                isCurrentExpressionMutable = false
+                                currentCollectionTypeCategory = "List"
+                            }
+                            if (isTargetCollectionMutable != isCurrentExpressionMutable
+                                || currentCollectionTypeCategory != targetCollectionTypeCategory) {
+                                if (isTargetCollectionMutable) {
+                                    when (targetCollectionTypeCategory) {
+                                        "List" -> append(".toMutableList()")
+                                        "Set" -> append(".toMutableSet()")
+                                    }
+                                } else {
+                                    when (targetCollectionTypeCategory) {
+                                        "List" -> append(".toList()")
+                                        "Set" -> append(".toSet()")
+                                    }
+                                }
+                            }
+                        }
+                        getterBuilder.addStatement(returnExpression)
+                        if (isDelegateNullable && !isTargetNullable) {
+                            getterBuilder.addStatement(
+                                "?: throw NullPointerException(%S)",
+                                "${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass"
+                            )
+                        }
+                    }
+                    // Handle non-collection different types that need facade conversion for non-collection types
+                    else if (!areTypesCompatible(targetType, delegateType) && !isTargetTypeSimple && !isDelegateTypeSimple) {
                         // Need to handle null and create facade for the property
                         if (isDelegateNullable) {
                             if (isTargetNullable) {
@@ -242,17 +280,27 @@ class FacadeClassGenerator(
                         } else {
                             getterBuilder.addStatement("return facadeFactory.from(delegate.${targetProperty.name}).to()")
                         }
+                    } else {
+                        // Direct property access for simple type expecting they are compatible
+                        if (isDelegateNullable && !isTargetNullable) {
+                            getterBuilder.addStatement(
+                                "return delegate.${targetProperty.name} ?: throw NullPointerException(%S)",
+                                "${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass"
+                            )
+                        } else {
+                            getterBuilder.addStatement("return delegate.${targetProperty.name}")
+                        }
                     }
 
-                    val propertyBuilder = PropertySpec.builder(targetProperty.name, returnType)
+                    val propertyBuilder = PropertySpec.builder(targetProperty.name, resolvedPropertyTypeName)
                         .addModifiers(KModifier.OVERRIDE)
                         .getter(getterBuilder.build())
 
-                    if (isMutable) {
+                    if (isPropertyMutable) {
                         propertyBuilder.mutable(true)
                             .setter(
                                 FunSpec.setterBuilder()
-                                    .addParameter("_", returnType)
+                                    .addParameter("_", resolvedPropertyTypeName)
                                     .addStatement("throw UnsupportedOperationException(%S)", "Making change to ${targetProperty.name} in facade of $targetClass is not allowed")
                                     .build()
                             )
@@ -263,9 +311,8 @@ class FacadeClassGenerator(
                 // Case 2: Property does not exist in delegate class - override it to throw error
                 else  {
                     val isMutable = targetProperty is KMutableProperty<*>
-                    val returnType = targetProperty.returnType.asTypeName()
 
-                    val propertyBuilder = PropertySpec.builder(targetProperty.name, returnType)
+                    val propertyBuilder = PropertySpec.builder(targetProperty.name, resolvedPropertyTypeName)
                         .addModifiers(KModifier.OVERRIDE)
                         .getter(
                             FunSpec.getterBuilder()
@@ -277,7 +324,7 @@ class FacadeClassGenerator(
                         propertyBuilder.mutable(true)
                             .setter(
                                 FunSpec.setterBuilder()
-                                    .addParameter("_", returnType)
+                                    .addParameter("_", resolvedPropertyTypeName)
                                     .addStatement("throw UnsupportedOperationException(%S)", "Making change to ${targetProperty.name} in facade of $targetClass is not allowed")
                                     .build()
                             )
@@ -301,11 +348,82 @@ class FacadeClassGenerator(
 
         // Build the file
         val fileBuilder = FileSpec.builder(facadePackageName, facadeClassName)
-            .addImport("kotlin.reflect", "KClass")
-            .addImport("com.runninglane.facade", "to", "from")
+            .addImport("com.runninglane.facade", "from")
             .addType(typeBuilder.build())
 
         // Add necessary imports for the file
         return fileBuilder.build().toString()
+    }
+
+    /**
+     * Resolves a KType to a TypeName, handling generic type parameters
+     * If the type is a type parameter, it will be resolved using the typeParamsMapByName
+     * Also handles complex generic types like List<T> by recursively resolving type arguments
+     */
+    private fun resolveTypeName(type: KType, typeParamsMapByName: Map<String, KClass<*>>?): TypeName {
+        // Debug information to help track type resolution
+        // println("Resolving type: $type, classifier: ${type.classifier}, jvmErasure: ${type.jvmErasure}")
+        val classifier = type.classifier
+        // Get the full original type string to preserve exact type information
+        val fullTypeStr = type.toString()
+        // Extract just the class name part (before any generic parameters)
+        val exactTypeStr = fullTypeStr.substringBefore('<')
+
+        return when {
+            // Case 1: Direct type parameter (e.g., T)
+            classifier is KTypeParameter -> {
+                val paramName = classifier.name
+                val concreteType = typeParamsMapByName?.get(paramName)
+                    ?: throw FacadeGenerationException(">$classifier< is not mapped to a target type. Please provide a mapping for it.")
+
+                // Create a TypeName from the concrete type, preserving nullability
+                concreteType.asTypeName().considerJavaNullability(type)
+            }
+
+            // Case 2: Generic class with type arguments (e.g., List<T>)
+            classifier is KClass<*> && type.arguments.isNotEmpty()-> {
+                // Use a more precise approach to get the exact type class name
+                // This preserves properties like mutability that might be lost in classifier
+                val rawTypeName = if (exactTypeStr != classifier.qualifiedName) {
+                    // The type string doesn't match the classifier's qualified name
+                    // This indicates we need to use the exact type from the string
+                    val packageName = exactTypeStr.substringBeforeLast('.', "").takeIf { it.isNotEmpty() } ?: ""
+                    val simpleClassName = exactTypeStr.substringAfterLast('.')
+
+                    // Only create a custom ClassName if we have valid package and class names
+                    if (packageName.isNotEmpty() && simpleClassName.isNotEmpty()) {
+                        ClassName(packageName, simpleClassName)
+                    } else {
+                        classifier.asClassName()
+                    }
+                } else {
+                    // Type string matches classifier's qualified name, so just use the classifier directly
+                    classifier.asClassName()
+                }
+
+                // Process each type argument
+                val typeArguments = type.arguments.map { projection ->
+                    val argType = projection.type
+                    if (argType == null) {
+                        // Handle star projection (*)
+                        STAR
+                    } else {
+                        // Recursively resolve the type argument
+                        resolveTypeName(argType, typeParamsMapByName)
+                    }
+                }
+
+                // Create a parameterized type name
+                rawTypeName.parameterizedBy(typeArguments).considerJavaNullability(type)
+            }
+
+            // For regular types without type arguments, just use the standard asTypeName
+            else -> type.asTypeName().considerJavaNullability(type)
+        }
+    }
+
+    private fun TypeName.considerJavaNullability(type: KType): TypeName = when {
+        type.isMarkedNullable || type.toString().endsWith("!") -> copy(nullable = true)
+        else -> this
     }
 }
