@@ -4,6 +4,7 @@ import kotlin.collections.plus
 
 val javaSdkVersion: String by project
 val kotlinPoetVersion: String by project
+val assertJVersion: String by project
 
 plugins {
     kotlin("jvm")
@@ -23,8 +24,8 @@ dependencies {
     implementation(kotlin("compiler-embeddable"))
     implementation("com.squareup:kotlinpoet:$kotlinPoetVersion")
     testImplementation(kotlin("test"))
+    testImplementation("org.assertj:assertj-core:$assertJVersion")
 }
-
 
 tasks.test {
     useJUnitPlatform()
