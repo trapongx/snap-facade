@@ -76,8 +76,8 @@ class SimpleTest {
     }
 
     @Test
-    fun `should create correct facade from delegate with different nullability and fail when accessing unprojected properties`() {
-        val delegate = DelegateWithDifferentNullability(
+    fun `should create correct facade from delegate with different nullability and mutability and fail when accessing unprojected properties`() {
+        val delegate = DelegateWithDifferentNullabilityAndMutability(
             id = 1,
             int = 100,
             long = 200L,
