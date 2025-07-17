@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.`object`
+package com.runninglane.facade.test.cases.`object`.delegate
 
 data class InnerDelegateWithDifferentNullabilityAndMutability(
     val id: Long,

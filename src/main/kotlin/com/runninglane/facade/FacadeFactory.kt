@@ -23,10 +23,10 @@ class FacadeFactory(
         delegate: D
     ): T {
         val facadeClass = facadeClassesMap.getOrPut(targetClass to delegateClass) {
-            facadeClassGenerator.generate(targetClass, delegateClass).also { facadeClassesMap[targetClass to delegateClass] = it }
+            facadeClassGenerator.generate(targetClass, delegateClass)
         }
         @Suppress("UNCHECKED_CAST")
-        return facadeClass.constructors.first { it.parameters.size == 1 }.call(delegate) as T
+        return facadeClass.constructors.first { it.parameters.size == 2 }.call(delegate, this) as T
     }
 
     fun <D : Any> from(delegateClass: KClass<D>, delegate: D): From<D> =

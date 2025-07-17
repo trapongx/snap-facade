@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.`object`
+package com.runninglane.facade.test.cases.`object`.target
 
 open class InnerTargetWithSimpleValues {
     open var id: Long? = null

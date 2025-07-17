@@ -9,3 +9,5 @@ data class From<D : Any>(
 ) {
     fun <T : Any> to(targetClass: KClass<T>): T = facadeFactory.create(targetClass, delegateClass, delegate)
 }
+
+inline fun <D : Any, reified T : Any> From<D>.to(): T = to(T::class)

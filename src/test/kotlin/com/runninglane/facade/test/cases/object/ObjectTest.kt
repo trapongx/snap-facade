@@ -2,6 +2,11 @@ package com.runninglane.facade.test.cases.`object`
 
 import com.runninglane.facade.FacadeFactory
 import com.runninglane.facade.from
+import com.runninglane.facade.test.cases.`object`.delegate.DelegateWithDifferentNullabilityAndMutability
+import com.runninglane.facade.test.cases.`object`.delegate.DelegateWithExactTypes
+import com.runninglane.facade.test.cases.`object`.delegate.InnerDelegateWithDifferentNullabilityAndMutability
+import com.runninglane.facade.test.cases.`object`.target.InnerTargetWithSimpleValues
+import com.runninglane.facade.test.cases.`object`.target.TargetWithObjectValues
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals

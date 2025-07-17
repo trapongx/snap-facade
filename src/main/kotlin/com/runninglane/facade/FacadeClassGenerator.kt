@@ -6,21 +6,103 @@ import com.runninglane.facade.naming.NamingStrategy
 import com.squareup.kotlinpoet.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
+import kotlin.reflect.KType
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaGetter
-import kotlin.reflect.jvm.javaMethod
 
 class FacadeClassGenerator(
     val annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet()
 ) {
     private val namingStrategy: NamingStrategy = DefaultNamingStrategy()
 
+    // Simple type packages that we consider as primitive or simple types
+    private val simpleTypePackages = setOf(
+        "kotlin",
+        "java.lang",
+        "java.math",
+        "java.time",
+        "java.util.UUID"
+    )
+
+    // Collection type classes that need special handling
+    private val collectionTypes = setOf(
+        List::class.java.name,
+        Set::class.java.name,
+        Map::class.java.name,
+        Collection::class.java.name,
+        Iterable::class.java.name,
+        Sequence::class.java.name,
+        Array::class.java.name
+    )
+
     fun generate(targetClass: KClass<*>, delegateClass: KClass<*>): KClass<*> {
         val facadeClassName = namingStrategy.buildClassName(targetClass.java, delegateClass.java)
         val facadePackageName = namingStrategy.buildPackageName(targetClass.java, delegateClass.java)
         val src = generateSourceCode(targetClass, delegateClass, facadeClassName, facadePackageName)
-        return CompilationSession.compileAndLoad(src, facadeClassName, facadePackageName).kotlin
+        return try {
+            CompilationSession.compileAndLoad(src, facadeClassName, facadePackageName).kotlin
+        } catch (t: Throwable) {
+            throw FacadeGenerationException("Error compiling generated source", t)
+        }
+    }
+
+    /**
+     * Determines if a type is considered a simple type (primitive, String, enum, etc.)
+     */
+    private fun isSimpleType(type: KType): Boolean {
+        val typeName = type.classifier.toString()
+
+        // Check if it's in a simple type package
+        if (simpleTypePackages.any { typeName.startsWith("class $it.") }) {
+            return true
+        }
+
+        // Check if it's an enum (safely)
+        if (typeName.startsWith("class ")) {
+            try {
+                val className = typeName.substring(6)
+                return Class.forName(className).isEnum
+            } catch (e: ClassNotFoundException) {
+                // If class not found, it's not a simple type
+                return false
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Determines if a type is a collection type
+     */
+    private fun isCollectionType(type: KType): Boolean {
+        val typeName = type.classifier.toString()
+        if (typeName.startsWith("class ")) {
+            val className = typeName.substring(6)
+
+            // Direct match with known collection types
+            if (className in collectionTypes) {
+                return true
+            }
+
+            // Check interfaces safely
+            try {
+                val clazz = Class.forName(className)
+                return clazz.interfaces.any { i -> i.name in collectionTypes }
+            } catch (e: ClassNotFoundException) {
+                // If class not found, assume it's not a collection
+                return false
+            }
+        }
+        return false
+    }
+
+    /**
+     * Checks if two types are compatible for direct mapping
+     */
+    private fun areTypesCompatible(targetType: KType, delegateType: KType): Boolean {
+        // If they're the same type (ignoring nullability), they're compatible for direct mapping
+        return targetType.classifier == delegateType.classifier
     }
 
     /**
@@ -59,13 +141,21 @@ class FacadeClassGenerator(
             KModifier.PUBLIC
         ).initializer("delegate").build()
 
+        val facadeFactoryPropertySpec = PropertySpec.builder(
+            "facadeFactory",
+            FacadeFactory::class.asClassName(),
+            KModifier.PRIVATE
+        ).initializer("facadeFactory").build()
+
         val typeBuilder = TypeSpec.classBuilder(facadeClassName)
             .primaryConstructor(
                 FunSpec.constructorBuilder()
                     .addParameter("delegate", delegateClass.asClassName())
+                    .addParameter("facadeFactory", FacadeFactory::class)
                     .build()
             )
             .addProperty(delegatePropertySpec)
+            .addProperty(facadeFactoryPropertySpec)
 
         // Make the class extend the target class
         if (targetClass.java.isInterface) {
@@ -93,23 +183,70 @@ class FacadeClassGenerator(
                     val isMutable = targetProperty is KMutableProperty<*>
                     val returnType = targetProperty.returnType.asTypeName()
 
-                    // Check if the delegate property is nullable but target property is not nullable
+                    // Check nullability
                     val isDelegateNullable = delegateProperty.returnType.isMarkedNullable
                     val isTargetNullable = targetProperty.returnType.isMarkedNullable
 
+                    // Check type compatibility
+                    val targetType = targetProperty.returnType
+                    val delegateType = delegateProperty.returnType
+
+                    // Generate getter based on property type and nullability
+                    val getterBuilder = FunSpec.getterBuilder()
+
+                    // Handle collection types
+                    if (isCollectionType(targetType) || isCollectionType(delegateType)) {
+                        throw FacadeGenerationException("Delegation of collection type is not yet supported. Property name: ${targetProperty.name}, Target class: $targetClass, Delegate class: $delegateClass")
+                    }
+                    // Handle simple types
+                    else if (isSimpleType(targetType) && isSimpleType(delegateType)) {
+                        // For simple values, types must match exactly
+                        if (targetType.classifier != delegateType.classifier) {
+                            throw FacadeGenerationException("Cannot create facade for property with different simple types. Property name: ${targetProperty.name}, Target class: $targetClass, Delegate class: $delegateClass")
+                        }
+
+                        // Handle nullability
+                        if (isDelegateNullable && !isTargetNullable) {
+                            getterBuilder.addStatement("return delegate.${targetProperty.name} ?: throw NullPointerException(%S)", "${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass")
+                        } else {
+                            getterBuilder.addStatement("return delegate.${targetProperty.name}")
+                        }
+                    }
+                    // Handle same complex types
+                    else if (areTypesCompatible(targetType, delegateType)) {
+                        // Same complex type - direct mapping
+                        if (isDelegateNullable && !isTargetNullable) {
+                            getterBuilder.addStatement("return delegate.${targetProperty.name} ?: throw NullPointerException(%S)", "${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass")
+                        } else {
+                            getterBuilder.addStatement("return delegate.${targetProperty.name}")
+                        }
+                    }
+                    // Handle different complex types - create facade for them
+                    else {
+                        // Extract just the simple class name for the reified to() call
+                        val targetTypeStr = targetType.classifier.toString()
+                        val targetSimpleName = if (targetTypeStr.startsWith("class ")) {
+                            val fullClassName = targetTypeStr.substring(6)
+                            fullClassName.substringAfterLast('.')
+                        } else {
+                            targetTypeStr
+                        }
+
+                        // Need to handle null and create facade for the property
+                        if (isDelegateNullable) {
+                            if (isTargetNullable) {
+                                getterBuilder.addStatement("return delegate.${targetProperty.name}?.let { facadeFactory.from(it).to() }")
+                            } else {
+                                getterBuilder.addStatement("return delegate.${targetProperty.name}?.let { facadeFactory.from(it).to() } ?: throw NullPointerException(%S)", "${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass")
+                            }
+                        } else {
+                            getterBuilder.addStatement("return facadeFactory.from(delegate.${targetProperty.name}).to()")
+                        }
+                    }
+
                     val propertyBuilder = PropertySpec.builder(targetProperty.name, returnType)
                         .addModifiers(KModifier.OVERRIDE)
-                        .getter(
-                            FunSpec.getterBuilder()
-                                .addStatement(
-                                    if (isDelegateNullable && !isTargetNullable) {
-                                        "return delegate.${targetProperty.name}!!"
-                                    } else {
-                                        "return delegate.${targetProperty.name}"
-                                    }
-                                )
-                                .build()
-                        )
+                        .getter(getterBuilder.build())
 
                     if (isMutable) {
                         propertyBuilder.mutable(true)
@@ -164,6 +301,8 @@ class FacadeClassGenerator(
 
         // Build the file
         val fileBuilder = FileSpec.builder(facadePackageName, facadeClassName)
+            .addImport("kotlin.reflect", "KClass")
+            .addImport("com.runninglane.facade", "to", "from")
             .addType(typeBuilder.build())
 
         // Add necessary imports for the file
