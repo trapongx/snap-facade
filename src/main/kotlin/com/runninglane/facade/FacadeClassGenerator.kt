@@ -227,21 +227,38 @@ class FacadeClassGenerator(
                         }
 
                         // Check if element types are different - use a more reliable approach
-                        val hasDifferentElementTypes =
-                            targetType.arguments.isNotEmpty() && delegateType.arguments.isNotEmpty() &&
-                                    targetType.arguments[0].type?.classifier != delegateType.arguments[0].type?.classifier
+                        val targetElementType = targetType.arguments[0].type!!
+                        val delegateElementType = delegateType.arguments[0].type!!
+                        val hasDifferentElementTypes = targetElementType.classifier != delegateElementType.classifier
+
+                        val isTargetElementNullable = targetElementType.isMarkedNullable
+                        val isDelegateElementNullable = delegateElementType.isMarkedNullable
+                        val hasDifferentElementNullability = isTargetElementNullable != isDelegateElementNullable
 
                         val isTargetCollectionMutable = isMutableCollectionType(targetProperty)
                         val isDelegateCollectionMutable = isMutableCollectionType(delegateProperty)
 
+
                         val nullSafety = if (isDelegateNullable) "?" else ""
+                        val elementNullSafety = if (isDelegateElementNullable) "?" else ""
+                        val returnExpressionParams = mutableListOf<String>()
                         val returnExpression = buildString {
                             append("return delegate.${targetProperty.name}")
                             var isCurrentExpressionMutable = isDelegateCollectionMutable
                             var currentCollectionTypeCategory = delegateCollectionTypeCategory
-                            if (hasDifferentElementTypes) {
+                            if (hasDifferentElementTypes || hasDifferentElementNullability) {
                                 val resolvedTargetElementType = resolveTypeName(targetType.arguments[0].type!!, emptyMap())
-                                append("$nullSafety.map { facadeFactory.from(it).to($resolvedTargetElementType::class) }")
+                                append("$nullSafety.map { element -> element")
+                                if (hasDifferentElementTypes) {
+                                    append("$elementNullSafety.let { ")
+                                    append("facadeFactory.from(element).to($resolvedTargetElementType::class)")
+                                    append(" }")
+                                }
+                                if (isDelegateElementNullable && !isTargetElementNullable) {
+                                    append(" ?: throw NullPointerException(%S)")
+                                    returnExpressionParams.add("Element type of ${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass")
+                                }
+                                append(" }")
                                 isCurrentExpressionMutable = false
                                 currentCollectionTypeCategory = "List"
                             }
@@ -249,24 +266,22 @@ class FacadeClassGenerator(
                                 || currentCollectionTypeCategory != targetCollectionTypeCategory) {
                                 if (isTargetCollectionMutable) {
                                     when (targetCollectionTypeCategory) {
-                                        "List" -> append(".toMutableList()")
-                                        "Set" -> append(".toMutableSet()")
+                                        "List" -> append("$nullSafety.toMutableList()")
+                                        "Set" -> append("$nullSafety.toMutableSet()")
                                     }
                                 } else {
                                     when (targetCollectionTypeCategory) {
-                                        "List" -> append(".toList()")
-                                        "Set" -> append(".toSet()")
+                                        "List" -> append("$nullSafety.toList()")
+                                        "Set" -> append("$nullSafety.toSet()")
                                     }
                                 }
                             }
+                            if (isDelegateNullable && !isTargetNullable) {
+                                append(" ?: throw NullPointerException(%S)")
+                                returnExpressionParams.add("${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass")
+                            }
                         }
-                        getterBuilder.addStatement(returnExpression)
-                        if (isDelegateNullable && !isTargetNullable) {
-                            getterBuilder.addStatement(
-                                "?: throw NullPointerException(%S)",
-                                "${targetProperty.name} is not-null in $targetClass but null value is held in delegate of type $delegateClass"
-                            )
-                        }
+                        getterBuilder.addStatement(returnExpression, *returnExpressionParams.toTypedArray())
                     }
                     // Handle non-collection different types that need facade conversion for non-collection types
                     else if (!areTypesCompatible(targetType, delegateType) && !isTargetTypeSimple && !isDelegateTypeSimple) {

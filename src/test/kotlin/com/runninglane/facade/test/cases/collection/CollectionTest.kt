@@ -15,6 +15,7 @@ class CollectionTest {
         listImmutableToMutable = listOf(Delegate.Element('B')),
         listMutableToImmutable = mutableListOf(Delegate.Element('C')),
         listImmutableToImmutable = listOf(Delegate.Element('D')),
+
         setMutableToMutable = mutableSetOf(Delegate.Element('E')),
         setImmutableToMutable = setOf(Delegate.Element('F')),
         setMutableToImmutable = mutableSetOf(Delegate.Element('G')),
@@ -29,12 +30,13 @@ class CollectionTest {
         // Assert equality
         assertThat(facade.listMutableToMutable[0]).isSameAs(delegate.listMutableToMutable[0])
         assertThat(facade.listImmutableToMutable[0]).isSameAs(delegate.listImmutableToMutable[0])
-        assertThat(facade.listMutableToImmutable[0]).isSameAs(delegate.listMutableToImmutable[0])
-        assertThat(facade.listImmutableToImmutable[0]).isSameAs(delegate.listImmutableToImmutable[0])
+        assertThat(facade.listMutableToImmutable[0]).isSameAs(delegate.listMutableToImmutable?.get(0))
+        assertThat(facade.listImmutableToImmutable[0]).isSameAs(delegate.listImmutableToImmutable?.get(0))
+
         assertThat(facade.setMutableToMutable.elementAt(0)).isSameAs(delegate.setMutableToMutable.elementAt(0))
         assertThat(facade.setImmutableToMutable.elementAt(0)).isSameAs(delegate.setImmutableToMutable.elementAt(0))
-        assertThat(facade.setMutableToImmutable.elementAt(0)).isSameAs(delegate.setMutableToImmutable.elementAt(0))
-        assertThat(facade.setImmutableToImmutable.elementAt(0)).isSameAs(delegate.setImmutableToImmutable.elementAt(0))
+        assertThat(facade.setMutableToImmutable.elementAt(0)).isSameAs(delegate.setMutableToImmutable?.elementAt(0))
+        assertThat(facade.setImmutableToImmutable.elementAt(0)).isSameAs(delegate.setImmutableToImmutable?.elementAt(0))
     }
 
     @Test
@@ -44,22 +46,23 @@ class CollectionTest {
 
         // Assert equality
         assertThat(facade.listMutableToMutable[0].char).isEqualTo(delegate.listMutableToMutable[0].char).isEqualTo('A')
-        assertThat(facade.listImmutableToMutable[0].char).isEqualTo(delegate.listImmutableToMutable[0].char)
+        assertThat(facade.listImmutableToMutable[0].char).isEqualTo(delegate.listImmutableToMutable[0]?.char)
             .isEqualTo('B')
-        assertThat(facade.listMutableToImmutable[0].char).isEqualTo(delegate.listMutableToImmutable[0].char)
+        assertThat(facade.listMutableToImmutable[0].char).isEqualTo(delegate.listMutableToImmutable?.get(0)?.char)
             .isEqualTo('C')
-        assertThat(facade.listImmutableToImmutable[0].char).isEqualTo(delegate.listImmutableToImmutable[0].char)
+        assertThat(facade.listImmutableToImmutable[0].char).isEqualTo(delegate.listImmutableToImmutable?.get(0)?.char)
             .isEqualTo('D')
+
         assertThat(facade.setMutableToMutable.elementAt(0).char).isEqualTo(delegate.setMutableToMutable.elementAt(0).char)
             .isEqualTo('E')
-        assertThat(facade.setImmutableToMutable.elementAt(0).char).isEqualTo(delegate.setImmutableToMutable.elementAt(0).char)
+        assertThat(facade.setImmutableToMutable.elementAt(0).char).isEqualTo(delegate.setImmutableToMutable.elementAt(0)?.char)
             .isEqualTo('F')
-        assertThat(facade.setMutableToImmutable.elementAt(0).char).isEqualTo(delegate.setMutableToImmutable.elementAt(0).char)
+        assertThat(facade.setMutableToImmutable.elementAt(0).char).isEqualTo(delegate.setMutableToImmutable?.elementAt(0)?.char)
             .isEqualTo('G')
         assertThat(facade.setImmutableToImmutable.elementAt(0).char).isEqualTo(
-            delegate.setImmutableToImmutable.elementAt(
+            delegate.setImmutableToImmutable?.elementAt(
                 0
-            ).char
+            )?.char
         ).isEqualTo('H')
     }
 }
