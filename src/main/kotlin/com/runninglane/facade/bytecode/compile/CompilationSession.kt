@@ -126,7 +126,7 @@ object CompilationSession {
             throw kotlin.RuntimeException(
                 "Kotlin compilation failed with exit code $exitCode.\n" +
                         "Source file: ${sourceFile.absolutePath}\n" +
-                        "Content: \n${sourceContent.lines().take(20).joinToString("\n")}"
+                        "Content: \n${sourceContent.lines().joinToString("\n")}"
             )
         }
 
@@ -302,7 +302,7 @@ object CompilationSession {
             throw kotlin.RuntimeException(
                 "Kotlin compilation failed with exit code $exitCode.\n" +
                         "Compiler output:\n${String(errorStream.toByteArray())}\n" +
-                        "Source:\n${src.lines().take(20).joinToString("\n")}"
+                        "Source:\n${src.lines().joinToString("\n")}"
             )
         }
     }
