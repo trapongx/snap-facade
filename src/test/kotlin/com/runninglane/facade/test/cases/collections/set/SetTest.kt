@@ -1,9 +1,15 @@
 package com.runninglane.facade.test.cases.collections.set
 
 import com.runninglane.facade.FacadeFactory
+import com.runninglane.facade.FacadeGenerationException
 import com.runninglane.facade.from
+import com.runninglane.facade.test.cases.collections.set.invalid.DelegateWithArrayToSet
+import com.runninglane.facade.test.cases.collections.set.invalid.DelegateWithCollectionToSet
+import com.runninglane.facade.test.cases.collections.set.invalid.DelegateWithListToSet
+import com.runninglane.facade.test.cases.collections.set.invalid.TargetWithOtherTypeToSet
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 
 class SetTest {
@@ -43,5 +49,29 @@ class SetTest {
                 0
             )?.code
         ).isEqualTo("D")
+    }
+
+    @Test
+    fun `should fail when trying to create facade from delegate with properties of type list, array, or collection to set type`() {
+        run {
+            val delegate = DelegateWithListToSet(otherTypeToSet = mutableListOf(Delegate.Element("A")))
+            assertThrows<FacadeGenerationException> {
+                FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
+            }
+        }
+
+        run {
+            val delegate = DelegateWithCollectionToSet(otherTypeToSet = listOf(Delegate.Element("A")))
+            assertThrows<FacadeGenerationException> {
+                FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
+            }
+        }
+
+        run {
+            val delegate = DelegateWithArrayToSet(otherTypeToSet = arrayOf(Delegate.Element("A")))
+            assertThrows<FacadeGenerationException> {
+                FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
+            }
+        }
     }
 }
