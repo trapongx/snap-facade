@@ -11,7 +11,23 @@ interface TargetWithDifferentElementType {
     val setMutableToImmutable: Set<Element>
     val setImmutableToImmutable: Set<Element>
 
-    interface Element {
-        val char: Char
+    val mapMutableToMutable: MutableMap<String, Element>
+    val mapImmutableToMutable: MutableMap<String, Element>
+    val mapMutableToImmutable: Map<Element, String>
+    val mapImmutableToImmutable: Map<Element, Element>
+
+    abstract class Element {
+        abstract val char: Char
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Element) return false
+            if (char != other.char) return false
+            return true
+        }
+
+        override fun hashCode(): Int = char.hashCode()
+
+        override fun toString(): String = "Element(char=$char)"
     }
 }

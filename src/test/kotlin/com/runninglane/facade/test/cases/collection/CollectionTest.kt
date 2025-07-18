@@ -19,7 +19,12 @@ class CollectionTest {
         setMutableToMutable = mutableSetOf(Delegate.Element('E')),
         setImmutableToMutable = setOf(Delegate.Element('F')),
         setMutableToImmutable = mutableSetOf(Delegate.Element('G')),
-        setImmutableToImmutable = setOf(Delegate.Element('H'))
+        setImmutableToImmutable = setOf(Delegate.Element('H')),
+
+        mapMutableToMutable = mutableMapOf("1" to Delegate.Element('I')),
+        mapImmutableToMutable = mapOf("2" to Delegate.Element('J')),
+        mapMutableToImmutable = mutableMapOf(Delegate.Element('L') to "4"),
+        mapImmutableToImmutable = mapOf(Delegate.Element('3') to Delegate.Element('K'))
     )
 
     @Test
@@ -37,6 +42,19 @@ class CollectionTest {
         assertThat(facade.setImmutableToMutable.elementAt(0)).isSameAs(delegate.setImmutableToMutable.elementAt(0))
         assertThat(facade.setMutableToImmutable.elementAt(0)).isSameAs(delegate.setMutableToImmutable?.elementAt(0))
         assertThat(facade.setImmutableToImmutable.elementAt(0)).isSameAs(delegate.setImmutableToImmutable?.elementAt(0))
+
+        assertThat(facade.mapMutableToMutable["1"]).isSameAs(delegate.mapMutableToMutable["1"])
+        assertThat(facade.mapImmutableToMutable["2"]).isSameAs(delegate.mapImmutableToMutable["2"])
+        run {
+            val key = facade.mapMutableToImmutable.keys.find { it.char == 'L' }
+            assertThat(key).isSameAs(delegate.mapMutableToImmutable?.keys?.find { it.char == 'L' })
+            assertThat(facade.mapMutableToImmutable[key]).isEqualTo("4")
+        }
+        run {
+            val key = facade.mapImmutableToImmutable.keys.find { it.char == '3' }
+            assertThat(key).isSameAs(delegate.mapImmutableToImmutable?.keys?.find { it.char == '3' })
+            assertThat(facade.mapImmutableToImmutable[key]?.char).isEqualTo('K')
+        }
     }
 
     @Test
@@ -64,5 +82,16 @@ class CollectionTest {
                 0
             )?.char
         ).isEqualTo('H')
+
+        assertThat(facade.mapMutableToMutable["1"]?.char).isEqualTo(delegate.mapMutableToMutable["1"]?.char).isEqualTo('I')
+        assertThat(facade.mapImmutableToMutable["2"]?.char).isEqualTo(delegate.mapMutableToMutable["2"]?.char).isEqualTo('J')
+        run {
+            val key = facade.mapMutableToImmutable.keys.find { it.char == 'L' }
+            assertThat(facade.mapMutableToImmutable[key]).isEqualTo("4")
+        }
+        run {
+            val key = facade.mapImmutableToImmutable.keys.find { it.char == '3' }
+            assertThat(facade.mapImmutableToImmutable[key]?.char).isEqualTo('K')
+        }
     }
 }
