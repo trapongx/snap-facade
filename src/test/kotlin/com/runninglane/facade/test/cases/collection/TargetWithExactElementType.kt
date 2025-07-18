@@ -1,6 +1,4 @@
-package com.runninglane.facade.test.cases.collection.target
-
-import com.runninglane.facade.test.cases.collection.delegate.Delegate
+package com.runninglane.facade.test.cases.collection
 
 interface TargetWithExactElementType {
     val listMutableToMutable: MutableList<Delegate.Element>
@@ -12,9 +10,4 @@ interface TargetWithExactElementType {
     val setImmutableToMutable: MutableSet<Delegate.Element>
     val setMutableToImmutable: Set<Delegate.Element>
     val setImmutableToImmutable: Set<Delegate.Element>
-
-    val mapMutableToMutable: MutableMap<String, Delegate.Element>
-    val mapImmutableToMutable: Map<String, Delegate.Element>
-    val mapMutableToImmutable: MutableMap<Delegate.Element, String>
-    val mapImmutableToImmutable: Map<Delegate.Element, Delegate.Element>
 }

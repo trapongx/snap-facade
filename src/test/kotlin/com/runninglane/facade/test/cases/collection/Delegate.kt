@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.collection.delegate
+package com.runninglane.facade.test.cases.collection
 
 data class Delegate(
     val listMutableToMutable: MutableList<Element>,
@@ -10,11 +10,6 @@ data class Delegate(
     val setImmutableToMutable: Set<Element?>,
     val setMutableToImmutable: MutableSet<Element>?,
     val setImmutableToImmutable: Set<Element?>?,
-
-    val mapMutableToMutable: MutableMap<String, Element>,
-    val mapImmutableToMutable: Map<String, Element?>,
-    val mapMutableToImmutable: MutableMap<Element, String>?,
-    val mapImmutableToImmutable: Map<Element, Element?>?
 ) {
-    data class Element(val char: Char)
+    data class Element(val code: String)
 }
