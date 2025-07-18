@@ -10,13 +10,15 @@ internal object CollectionTypeUtils {
         List::class,
         Set::class,
         Map::class,
+        Collection::class
     ).flatMap { listOf(it.qualifiedName, it.java.canonicalName) }.toSet()
 
     // Mutable collection type classes
     private val mutableCollectionTypes = setOf(
         MutableList::class,
         MutableSet::class,
-        MutableMap::class
+        MutableMap::class,
+        MutableCollection::class
     ).flatMap { listOf(it.qualifiedName, it.java.canonicalName) }.toSet()
 
     /**
@@ -26,7 +28,7 @@ internal object CollectionTypeUtils {
         val typeName = type.classifier.toString()
 
         // Check for collection names as plain interfaces/classes (not prefixed with 'class')
-        val collectionNames = listOf("List", "Set", "Map")
+        val collectionNames = listOf("List", "Set", "Map", "Collection")
         if (collectionNames.any { typeName.endsWith(it) }) {
             return true
         }
@@ -68,6 +70,7 @@ internal object CollectionTypeUtils {
                 className.contains("List") -> "List"
                 className.contains("Set") -> "Set"
                 className.contains("Map") -> "Map"
+                className.contains("Collection") -> "Collection"
                 else -> null
             }
         }
@@ -83,6 +86,7 @@ internal object CollectionTypeUtils {
 
         return returnTypeStr.contains("kotlin.collections.MutableList") ||
                 returnTypeStr.contains("kotlin.collections.MutableSet") ||
-                returnTypeStr.contains("kotlin.collections.MutableMap")
+                returnTypeStr.contains("kotlin.collections.MutableMap") ||
+                returnTypeStr.contains("kotlin.collections.MutableCollection")
     }
 }

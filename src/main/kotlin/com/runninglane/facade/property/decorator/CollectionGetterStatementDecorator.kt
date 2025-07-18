@@ -82,7 +82,7 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                 }
 
                 when (targetCollectionTypeCategory) {
-                    "List", "Set" -> {
+                    "List", "Set", "Collection" -> {
                         appendLine("$nullSafety.map { element ->").let { listOf("element") }
                         appendElementValueExpression(0, "element")
                         append(" }")
@@ -113,14 +113,14 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                 || currentCollectionTypeCategory != targetCollectionTypeCategory) {
                 if (isTargetCollectionMutable) {
                     when (targetCollectionTypeCategory) {
-                        "List" -> append("$nullSafety.toMutableList()")
+                        "List", "Collection" -> append("$nullSafety.toMutableList()")
                         "Set" -> append("$nullSafety.toMutableSet()")
                         "Map" -> append("$nullSafety.toMutableMap()")
                         else -> error("Should not happen")
                     }
                 } else {
                     when (targetCollectionTypeCategory) {
-                        "List" -> append("$nullSafety.toList()")
+                        "List", "Collection" -> append("$nullSafety.toList()")
                         "Set" -> append("$nullSafety.toSet()")
                         "Map" -> append("$nullSafety.toMap()")
                         else -> error("Should not happen")
