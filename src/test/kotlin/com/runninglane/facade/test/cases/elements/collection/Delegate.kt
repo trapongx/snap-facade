@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.collection
+package com.runninglane.facade.test.cases.elements.collection
 
 data class Delegate(
     val listMutableToMutable: MutableList<Element>,

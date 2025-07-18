@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.collection
+package com.runninglane.facade.test.cases.elements.collection
 
 import com.runninglane.facade.FacadeFactory
 import com.runninglane.facade.from

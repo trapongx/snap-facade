@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.map
+package com.runninglane.facade.test.cases.elements.map
 
 interface TargetWithExactElementType {
     val mapMutableToMutable: MutableMap<String, Delegate.Element>

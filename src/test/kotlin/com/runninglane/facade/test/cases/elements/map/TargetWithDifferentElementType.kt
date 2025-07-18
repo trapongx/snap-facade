@@ -1,15 +1,10 @@
-package com.runninglane.facade.test.cases.collection
+package com.runninglane.facade.test.cases.elements.map
 
 interface TargetWithDifferentElementType {
-    val listMutableToMutable: MutableList<Element>
-    val listImmutableToMutable: MutableList<Element>
-    val listMutableToImmutable: List<Element>
-    val listImmutableToImmutable: List<Element>
-
-    val setMutableToMutable: MutableSet<Element>
-    val setImmutableToMutable: MutableSet<Element>
-    val setMutableToImmutable: Set<Element>
-    val setImmutableToImmutable: Set<Element>
+    val mapMutableToMutable: MutableMap<String, Element>
+    val mapImmutableToMutable: MutableMap<String, Element>
+    val mapMutableToImmutable: Map<Element, String>
+    val mapImmutableToImmutable: Map<Element, Element>
 
     abstract class Element {
         abstract val code: String

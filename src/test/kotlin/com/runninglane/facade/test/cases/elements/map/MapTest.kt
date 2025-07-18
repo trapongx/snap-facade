@@ -1,17 +1,18 @@
-package com.runninglane.facade.test.cases.map
+package com.runninglane.facade.test.cases.elements.map
 
 import com.runninglane.facade.FacadeFactory
 import com.runninglane.facade.from
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlin.collections.get
 
 
 class MapTest {
     private fun createDelegate() = Delegate(
-        mapMutableToMutable = mutableMapOf("1" to Delegate.Element("I")),
-        mapImmutableToMutable = mapOf("2" to Delegate.Element("J")),
-        mapMutableToImmutable = mutableMapOf(Delegate.Element("L") to "4"),
-        mapImmutableToImmutable = mapOf(Delegate.Element("3") to Delegate.Element("K"))
+        mapMutableToMutable = mutableMapOf("1" to Delegate.Element("A")),
+        mapImmutableToMutable = mapOf("2" to Delegate.Element("B")),
+        mapMutableToImmutable = mutableMapOf(Delegate.Element("C") to "4"),
+        mapImmutableToImmutable = mapOf(Delegate.Element("3") to Delegate.Element("D"))
     )
 
     @Test
@@ -23,14 +24,14 @@ class MapTest {
         assertThat(facade.mapMutableToMutable["1"]).isSameAs(delegate.mapMutableToMutable["1"])
         assertThat(facade.mapImmutableToMutable["2"]).isSameAs(delegate.mapImmutableToMutable["2"])
         run {
-            val key = facade.mapMutableToImmutable.keys.find { it.code == "L" }
-            assertThat(key).isSameAs(delegate.mapMutableToImmutable?.keys?.find { it.code == "L" })
+            val key = facade.mapMutableToImmutable.keys.find { it.code == "C" }
+            assertThat(key).isSameAs(delegate.mapMutableToImmutable?.keys?.find { it.code == "C" })
             assertThat(facade.mapMutableToImmutable[key]).isEqualTo("4")
         }
         run {
             val key = facade.mapImmutableToImmutable.keys.find { it.code == "3" }
             assertThat(key).isSameAs(delegate.mapImmutableToImmutable?.keys?.find { it.code == "3" })
-            assertThat(facade.mapImmutableToImmutable[key]?.code).isEqualTo("K")
+            assertThat(facade.mapImmutableToImmutable[key]?.code).isEqualTo("D")
         }
     }
 
@@ -40,15 +41,15 @@ class MapTest {
         val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithDifferentElementType::class)
 
         // Assert equality
-        assertThat(facade.mapMutableToMutable["1"]?.code).isEqualTo(delegate.mapMutableToMutable["1"]?.code).isEqualTo("I")
-        assertThat(facade.mapImmutableToMutable["2"]?.code).isEqualTo(delegate.mapMutableToMutable["2"]?.code).isEqualTo("J")
+        assertThat(facade.mapMutableToMutable["1"]?.code).isEqualTo(delegate.mapMutableToMutable["1"]?.code).isEqualTo("A")
+        assertThat(facade.mapImmutableToMutable["2"]?.code).isEqualTo(delegate.mapMutableToMutable["2"]?.code).isEqualTo("B")
         run {
-            val key = facade.mapMutableToImmutable.keys.find { it.code == "L" }
+            val key = facade.mapMutableToImmutable.keys.find { it.code == "C" }
             assertThat(facade.mapMutableToImmutable[key]).isEqualTo("4")
         }
         run {
             val key = facade.mapImmutableToImmutable.keys.find { it.code == "3" }
-            assertThat(facade.mapImmutableToImmutable[key]?.code).isEqualTo("K")
+            assertThat(facade.mapImmutableToImmutable[key]?.code).isEqualTo("D")
         }
     }
 }
