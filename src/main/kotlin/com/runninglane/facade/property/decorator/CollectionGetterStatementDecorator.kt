@@ -27,56 +27,103 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
             })
         }
 
-        // Check if element types are different - use a more reliable approach
-        val targetElementType = targetType.arguments[0].type!!
-        val delegateElementType = delegateType.arguments[0].type!!
-        val hasDifferentElementTypes = targetElementType.classifier != delegateElementType.classifier
-
-        val isTargetElementNullable = targetElementType.isMarkedNullable
-        val isDelegateElementNullable = delegateElementType.isMarkedNullable
-        val hasDifferentElementNullability = isTargetElementNullable != isDelegateElementNullable
-
         val isTargetCollectionMutable = CollectionTypeUtils.isMutableCollectionType(targetProperty)
         val isDelegateCollectionMutable = CollectionTypeUtils.isMutableCollectionType(delegateProperty)
 
         val isDelegateNullable = delegateType.isMarkedNullable
         val isTargetNullable = targetType.isMarkedNullable
-
         val nullSafety = if (isDelegateNullable) "?" else ""
-        val elementNullSafety = if (isDelegateElementNullable) "?" else ""
+
         val returnStmtParams = mutableListOf<String>()
         val returnStmt = buildString {
             append("return delegate.${targetProperty.name}")
+
             var isCurrentExpressionMutable = isDelegateCollectionMutable
             var currentCollectionTypeCategory = delegateCollectionTypeCategory
-            if (hasDifferentElementTypes || hasDifferentElementNullability) {
-                val resolvedTargetElementType = TypeNameResolver
-                    .resolve(targetType.arguments[0].type!!, emptyMap())
-                append("$nullSafety.map { element -> element")
-                if (hasDifferentElementTypes) {
-                    append("$elementNullSafety.let { ")
-                    append("facadeFactory.from(element).to($resolvedTargetElementType::class)")
-                    append(" }")
+
+            // Check if element types are different - use a more reliable approach
+            val hasDifferentElementTypes = targetType.arguments.zip(delegateType.arguments)
+                .any { (targetTypeArg, delegateTypeArg) ->
+                    val targetElementType = targetTypeArg.type!!
+                    val delegateElementType = delegateTypeArg.type!!
+
+                    targetElementType.classifier != delegateElementType.classifier
+                            || targetElementType.isMarkedNullable != delegateElementType.isMarkedNullable
                 }
-                if (isDelegateElementNullable && !isTargetElementNullable) {
-                    append(" ?: throw NullPointerException(%S)")
-                    returnStmtParams.add("Element type of ${targetProperty.name} is not-null but null value is held in delegate")
+
+            if (hasDifferentElementTypes) {
+                fun appendElementValueExpression(index: Int, elementName: String) {
+                    append(elementName)
+
+                    val targetElementType = targetType.arguments[index].type!!
+                    val delegateElementType = delegateType.arguments[index].type!!
+                    val isElementTypeDifferent = targetElementType.classifier != delegateElementType.classifier
+
+                    val isTargetElementNullable = targetElementType.isMarkedNullable
+                    val isDelegateElementNullable = delegateElementType.isMarkedNullable
+                    val isElementNullabilityDifferent = isTargetElementNullable != isDelegateElementNullable
+
+                    val elementNullSafety = if (isDelegateElementNullable) "?" else ""
+
+                    if (isElementTypeDifferent || isElementNullabilityDifferent) {
+                        val resolvedTargetElementType = TypeNameResolver.resolve(targetElementType, emptyMap())
+
+                        if (isElementTypeDifferent) {
+                            append("$elementNullSafety.let { ")
+                            append("facadeFactory.from($elementName).to($resolvedTargetElementType::class)")
+                            appendLine(" }")
+                        }
+
+                        if (isDelegateElementNullable && !isTargetElementNullable) {
+                            appendLine(" ?: throw NullPointerException(%S)")
+                            returnStmtParams.add("Element type of ${targetProperty.name} is not-null but null value is held in delegate")
+                        }
+                    }
                 }
-                append(" }")
+
+                when (targetCollectionTypeCategory) {
+                    "List", "Set" -> {
+                        appendLine("$nullSafety.map { element ->").let { listOf("element") }
+                        appendElementValueExpression(0, "element")
+                        append(" }")
+
+                        currentCollectionTypeCategory = "List"
+                    }
+
+                    "Map" -> {
+                        appendLine("$nullSafety.map { (key, value) ->").let { listOf("key", "value") }
+                        appendLine("Pair(")
+                        appendElementValueExpression(0, "key")
+                        appendLine(",")
+                        appendElementValueExpression(1, "value")
+                        appendLine(")")
+                        appendLine(" }$nullSafety.toMap()")
+
+                        currentCollectionTypeCategory = "Map"
+                    }
+
+                    else -> error("Should not happen")
+                }
+
                 isCurrentExpressionMutable = false
-                currentCollectionTypeCategory = "List"
+
             }
+
             if (isTargetCollectionMutable != isCurrentExpressionMutable
                 || currentCollectionTypeCategory != targetCollectionTypeCategory) {
                 if (isTargetCollectionMutable) {
                     when (targetCollectionTypeCategory) {
                         "List" -> append("$nullSafety.toMutableList()")
                         "Set" -> append("$nullSafety.toMutableSet()")
+                        "Map" -> append("$nullSafety.toMutableMap()")
+                        else -> error("Should not happen")
                     }
                 } else {
                     when (targetCollectionTypeCategory) {
                         "List" -> append("$nullSafety.toList()")
                         "Set" -> append("$nullSafety.toSet()")
+                        "Map" -> append("$nullSafety.toMap()")
+                        else -> error("Should not happen")
                     }
                 }
             }
@@ -87,4 +134,5 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
         }
         getterBuilder.addStatement(returnStmt, *returnStmtParams.toTypedArray())
     }
+
 }

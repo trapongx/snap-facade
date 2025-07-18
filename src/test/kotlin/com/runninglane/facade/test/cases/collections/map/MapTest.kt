@@ -42,7 +42,7 @@ class MapTest {
 
         // Assert equality
         assertThat(facade.mapMutableToMutable["1"]?.code).isEqualTo(delegate.mapMutableToMutable["1"]?.code).isEqualTo("A")
-        assertThat(facade.mapImmutableToMutable["2"]?.code).isEqualTo(delegate.mapMutableToMutable["2"]?.code).isEqualTo("B")
+        assertThat(facade.mapImmutableToMutable["2"]?.code).isEqualTo(delegate.mapImmutableToMutable["2"]?.code).isEqualTo("B")
         run {
             val key = facade.mapMutableToImmutable.keys.find { it.code == "C" }
             assertThat(facade.mapMutableToImmutable[key]).isEqualTo("4")
