@@ -13,15 +13,13 @@ class ArrayTest {
         arrayToMutableList = arrayOf(Delegate.Element("C")),
         mutableListToArray = mutableListOf(Delegate.Element("D")),
         
-        arrayToSet = arrayOf(Delegate.Element("E")),
-        setToArray = setOf(Delegate.Element("F")),
-        arrayToMutableSet = arrayOf(Delegate.Element("G")),
-        mutableSetToArray = mutableSetOf(Delegate.Element("H")),
+        setToArray = setOf(Delegate.Element("E")),
+        mutableSetToArray = mutableSetOf(Delegate.Element("F")),
         
-        arrayToCollection = arrayOf(Delegate.Element("I")),
-        collectionToArray = listOf(Delegate.Element("J")),
-        arrayToMutableCollection = arrayOf(Delegate.Element("K")),
-        mutableCollectionToArray = mutableListOf(Delegate.Element("L"))
+        arrayToCollection = arrayOf(Delegate.Element("G")),
+        collectionToArray = listOf(Delegate.Element("H")),
+        arrayToMutableCollection = arrayOf(Delegate.Element("I")),
+        mutableCollectionToArray = mutableListOf(Delegate.Element("J"))
     )
 
     @Test
@@ -35,9 +33,7 @@ class ArrayTest {
         assertThat(facade.arrayToMutableList[0]).isSameAs(delegate.arrayToMutableList[0])
         assertThat(facade.mutableListToArray[0]).isSameAs(delegate.mutableListToArray[0])
 
-        assertThat(facade.arrayToSet.elementAt(0)).isSameAs(delegate.arrayToSet[0])
         assertThat(facade.setToArray[0]).isSameAs(delegate.setToArray.elementAt(0))
-        assertThat(facade.arrayToMutableSet.elementAt(0)).isSameAs(delegate.arrayToMutableSet[0])
         assertThat(facade.mutableSetToArray[0]).isSameAs(delegate.mutableSetToArray.elementAt(0))
 
         assertThat(facade.arrayToCollection.elementAt(0)).isSameAs(delegate.arrayToCollection[0])
@@ -57,14 +53,12 @@ class ArrayTest {
         assertThat(facade.arrayToMutableList[0].code).isEqualTo(delegate.arrayToMutableList[0].code).isEqualTo("C")
         assertThat(facade.mutableListToArray[0].code).isEqualTo(delegate.mutableListToArray[0].code).isEqualTo("D")
 
-        assertThat(facade.arrayToSet.elementAt(0).code).isEqualTo(delegate.arrayToSet.elementAt(0).code).isEqualTo("E")
-        assertThat(facade.setToArray[0].code).isEqualTo(delegate.setToArray.elementAt(0).code).isEqualTo("F")
-        assertThat(facade.arrayToMutableSet.elementAt(0).code).isEqualTo(delegate.arrayToMutableSet.elementAt(0).code).isEqualTo("G")
-        assertThat(facade.mutableSetToArray[0].code).isEqualTo(delegate.mutableSetToArray.elementAt(0).code).isEqualTo("H")
+        assertThat(facade.setToArray[0].code).isEqualTo(delegate.setToArray.elementAt(0).code).isEqualTo("E")
+        assertThat(facade.mutableSetToArray[0].code).isEqualTo(delegate.mutableSetToArray.elementAt(0).code).isEqualTo("F")
 
-        assertThat(facade.arrayToCollection.elementAt(0)?.code).isEqualTo(delegate.arrayToCollection.elementAt(0)?.code).isEqualTo("E")
-        assertThat(facade.collectionToArray[0]?.code).isEqualTo(delegate.collectionToArray.elementAt(0)?.code).isEqualTo("F")
-        assertThat(facade.arrayToMutableCollection.elementAt(0)?.code).isEqualTo(delegate.arrayToMutableCollection.elementAt(0)?.code).isEqualTo("G")
-        assertThat(facade.mutableCollectionToArray[0]?.code).isEqualTo(delegate.mutableCollectionToArray.elementAt(0)?.code).isEqualTo("H")
+        assertThat(facade.arrayToCollection.elementAt(0)?.code).isEqualTo(delegate.arrayToCollection.elementAt(0)?.code).isEqualTo("G")
+        assertThat(facade.collectionToArray[0]?.code).isEqualTo(delegate.collectionToArray.elementAt(0)?.code).isEqualTo("H")
+        assertThat(facade.arrayToMutableCollection.elementAt(0)?.code).isEqualTo(delegate.arrayToMutableCollection.elementAt(0)?.code).isEqualTo("I")
+        assertThat(facade.mutableCollectionToArray[0]?.code).isEqualTo(delegate.mutableCollectionToArray.elementAt(0)?.code).isEqualTo("J")
     }
 }

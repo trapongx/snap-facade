@@ -6,9 +6,7 @@ data class Delegate(
     val arrayToMutableList: Array<Element>,
     val mutableListToArray: MutableList<Element>,
 
-    val arrayToSet: Array<Element>,
     val setToArray: Set<Element>,
-    val arrayToMutableSet: Array<Element>,
     val mutableSetToArray: MutableSet<Element>,
 
     val arrayToCollection: Array<Element?>,

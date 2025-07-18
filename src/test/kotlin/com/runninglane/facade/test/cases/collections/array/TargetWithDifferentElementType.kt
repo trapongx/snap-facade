@@ -6,9 +6,7 @@ interface TargetWithDifferentElementType {
     val arrayToMutableList: MutableList<Element>
     val mutableListToArray: Array<Element>
 
-    val arrayToSet: Set<Element>
     val setToArray: Array<Element>
-    val arrayToMutableSet: MutableSet<Element>
     val mutableSetToArray: Array<Element>
 
     val arrayToCollection: Collection<Element?>

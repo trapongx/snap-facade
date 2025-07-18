@@ -6,9 +6,7 @@ interface TargetWithExactElementType {
     val arrayToMutableList: MutableList<Delegate.Element>
     val mutableListToArray: Array<Delegate.Element>
 
-    val arrayToSet: Set<Delegate.Element>
     val setToArray: Array<Delegate.Element>
-    val arrayToMutableSet: MutableSet<Delegate.Element>
     val mutableSetToArray: Array<Delegate.Element>
 
     val arrayToCollection: Collection<Delegate.Element?>

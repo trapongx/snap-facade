@@ -19,12 +19,21 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
         val delegateCollectionTypeCategory = CollectionTypeUtils.getCollectionTypeCategory(delegateType)
 
         if (targetCollectionTypeCategory != delegateCollectionTypeCategory) {
-            throw FacadeGenerationException(buildString {
-                append("Cannot create facade for property with different collection types.")
-                append(" Property name: ${targetProperty.name},")
-                append(" Target type: $targetCollectionTypeCategory,")
-                append(" Delegate type: $delegateCollectionTypeCategory")
-            })
+            val canConvertWithoutLosingCharacteristics = when (delegateCollectionTypeCategory) {
+                "List" -> targetCollectionTypeCategory in listOf("Collection", "Array")
+                "Set" -> targetCollectionTypeCategory in listOf("List", "Collection", "Array")
+                "Collection" -> targetCollectionTypeCategory in listOf("List", "Array")
+                "Array" -> targetCollectionTypeCategory in listOf("List", "Collection")
+                else -> false
+            }
+            if (!canConvertWithoutLosingCharacteristics) {
+                throw FacadeGenerationException(buildString {
+                    append("Cannot create facade for property with different collection types.")
+                    append(" Property name: ${targetProperty.name},")
+                    append(" Target type: $targetCollectionTypeCategory,")
+                    append(" Delegate type: $delegateCollectionTypeCategory")
+                })
+            }
         }
 
         val isTargetCollectionMutable = CollectionTypeUtils.isMutableCollectionType(targetProperty)
@@ -70,7 +79,7 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
 
                         if (isElementTypeDifferent) {
                             append("$elementNullSafety.let { ")
-                            append("facadeFactory.from($elementName).to($resolvedTargetElementType::class)")
+                            append("facadeFactory.from($elementName).to(${resolvedTargetElementType.toString().removeSuffix("?")}::class)")
                             appendLine(" }")
                         }
 
@@ -88,6 +97,7 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                         append(" }")
 
                         currentCollectionTypeCategory = "List"
+                        isCurrentExpressionMutable = false
                     }
 
                     "Map" -> {
@@ -100,12 +110,22 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                         appendLine(" }$nullSafety.toMap()")
 
                         currentCollectionTypeCategory = "Map"
+                        isCurrentExpressionMutable = false
+                    }
+
+                    "Array" -> {
+                        appendLine("$nullSafety.map { element ->").let { listOf("element") }
+                        appendElementValueExpression(0, "element")
+                        append(" }")
+
+                        currentCollectionTypeCategory = "List"
+                        isCurrentExpressionMutable = false
                     }
 
                     else -> error("Should not happen")
                 }
 
-                isCurrentExpressionMutable = false
+
 
             }
 
@@ -116,6 +136,7 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                         "List", "Collection" -> append("$nullSafety.toMutableList()")
                         "Set" -> append("$nullSafety.toMutableSet()")
                         "Map" -> append("$nullSafety.toMutableMap()")
+                        "Array" -> append("$nullSafety.toTypedArray()")
                         else -> error("Should not happen")
                     }
                 } else {
@@ -123,6 +144,7 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                         "List", "Collection" -> append("$nullSafety.toList()")
                         "Set" -> append("$nullSafety.toSet()")
                         "Map" -> append("$nullSafety.toMap()")
+                        "Array" -> error("Should not happen")
                         else -> error("Should not happen")
                     }
                 }
