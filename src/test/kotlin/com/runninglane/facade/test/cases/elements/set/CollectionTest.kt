@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.elements.collection
+package com.runninglane.facade.test.cases.elements.set
 
 import com.runninglane.facade.FacadeFactory
 import com.runninglane.facade.from
@@ -8,15 +8,10 @@ import org.junit.jupiter.api.Test
 
 class CollectionTest {
     private fun createDelegate() = Delegate(
-        listMutableToMutable = mutableListOf(Delegate.Element("A")),
-        listImmutableToMutable = listOf(Delegate.Element("B")),
-        listMutableToImmutable = mutableListOf(Delegate.Element("C")),
-        listImmutableToImmutable = listOf(Delegate.Element("D")),
-
-        setMutableToMutable = mutableSetOf(Delegate.Element("E")),
-        setImmutableToMutable = setOf(Delegate.Element("F")),
-        setMutableToImmutable = mutableSetOf(Delegate.Element("G")),
-        setImmutableToImmutable = setOf(Delegate.Element("H")),
+        setMutableToMutable = mutableSetOf(Delegate.Element("A")),
+        setImmutableToMutable = setOf(Delegate.Element("B")),
+        setMutableToImmutable = mutableSetOf(Delegate.Element("C")),
+        setImmutableToImmutable = setOf(Delegate.Element("D")),
     )
 
     @Test
@@ -25,11 +20,6 @@ class CollectionTest {
         val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithExactElementType::class)
 
         // Assert equality
-        assertThat(facade.listMutableToMutable[0]).isSameAs(delegate.listMutableToMutable[0])
-        assertThat(facade.listImmutableToMutable[0]).isSameAs(delegate.listImmutableToMutable[0])
-        assertThat(facade.listMutableToImmutable[0]).isSameAs(delegate.listMutableToImmutable?.get(0))
-        assertThat(facade.listImmutableToImmutable[0]).isSameAs(delegate.listImmutableToImmutable?.get(0))
-
         assertThat(facade.setMutableToMutable.elementAt(0)).isSameAs(delegate.setMutableToMutable.elementAt(0))
         assertThat(facade.setImmutableToMutable.elementAt(0)).isSameAs(delegate.setImmutableToMutable.elementAt(0))
         assertThat(facade.setMutableToImmutable.elementAt(0)).isSameAs(delegate.setMutableToImmutable?.elementAt(0))
@@ -42,24 +32,16 @@ class CollectionTest {
         val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithDifferentElementType::class)
 
         // Assert equality
-        assertThat(facade.listMutableToMutable[0].code).isEqualTo(delegate.listMutableToMutable[0].code).isEqualTo("A")
-        assertThat(facade.listImmutableToMutable[0].code).isEqualTo(delegate.listImmutableToMutable[0]?.code)
-            .isEqualTo("B")
-        assertThat(facade.listMutableToImmutable[0].code).isEqualTo(delegate.listMutableToImmutable?.get(0)?.code)
-            .isEqualTo("C")
-        assertThat(facade.listImmutableToImmutable[0].code).isEqualTo(delegate.listImmutableToImmutable?.get(0)?.code)
-            .isEqualTo("D")
-
         assertThat(facade.setMutableToMutable.elementAt(0).code).isEqualTo(delegate.setMutableToMutable.elementAt(0).code)
-            .isEqualTo("E")
+            .isEqualTo("A")
         assertThat(facade.setImmutableToMutable.elementAt(0).code).isEqualTo(delegate.setImmutableToMutable.elementAt(0)?.code)
-            .isEqualTo("F")
+            .isEqualTo("B")
         assertThat(facade.setMutableToImmutable.elementAt(0).code).isEqualTo(delegate.setMutableToImmutable?.elementAt(0)?.code)
-            .isEqualTo("G")
+            .isEqualTo("C")
         assertThat(facade.setImmutableToImmutable.elementAt(0).code).isEqualTo(
             delegate.setImmutableToImmutable?.elementAt(
                 0
             )?.code
-        ).isEqualTo("H")
+        ).isEqualTo("D")
     }
 }
