@@ -1,12 +1,17 @@
 package com.runninglane.facade.property.decorator
 
-import com.runninglane.facade.FacadeGenerationException
+import com.runninglane.facade.property.decorator.collection.CollectionConverter
+import com.runninglane.facade.property.decorator.collection.MapConverter
 import com.runninglane.facade.property.type.CollectionTypeUtils
 import com.runninglane.facade.property.type.TypeNameResolver
 import com.squareup.kotlinpoet.FunSpec
 import kotlin.reflect.KProperty1
+import kotlin.reflect.full.createType
 
 internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
+
+    val converters = listOf(CollectionConverter, MapConverter)
+
     override fun decorate(
         targetProperty: KProperty1<*, *>,
         delegateProperty: KProperty1<*, *>,
@@ -27,7 +32,7 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                 else -> false
             }
             if (!canConvertWithoutLosingCharacteristics) {
-                throw FacadeGenerationException(buildString {
+                error(buildString {
                     append("Cannot create facade for property with different collection types.")
                     append(" Property name: ${targetProperty.name},")
                     append(" Target type: $targetCollectionTypeCategory,")
@@ -35,9 +40,6 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                 })
             }
         }
-
-        val isTargetCollectionMutable = CollectionTypeUtils.isMutableCollectionType(targetProperty)
-        val isDelegateCollectionMutable = CollectionTypeUtils.isMutableCollectionType(delegateProperty)
 
         val isDelegateNullable = delegateType.isMarkedNullable
         val isTargetNullable = targetType.isMarkedNullable
@@ -47,8 +49,7 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
         val returnStmt = buildString {
             append("return delegate.${targetProperty.name}")
 
-            var isCurrentExpressionMutable = isDelegateCollectionMutable
-            var currentCollectionTypeCategory = delegateCollectionTypeCategory
+            var currentExpressionType = delegateType
 
             // Check if element types are different - use a more reliable approach
             val hasDifferentElementTypes = targetType.arguments.zip(delegateType.arguments)
@@ -91,13 +92,12 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                 }
 
                 when (targetCollectionTypeCategory) {
-                    "List", "Set", "Collection" -> {
+                    "List", "Set", "Collection", "Array" -> {
                         appendLine("$nullSafety.map { element ->").let { listOf("element") }
                         appendElementValueExpression(0, "element")
                         append(" }")
 
-                        currentCollectionTypeCategory = "List"
-                        isCurrentExpressionMutable = false
+                        currentExpressionType = List::class.createType(arguments = delegateType.arguments)
                     }
 
                     "Map" -> {
@@ -109,44 +109,23 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                         appendLine(")")
                         appendLine(" }$nullSafety.toMap()")
 
-                        currentCollectionTypeCategory = "Map"
-                        isCurrentExpressionMutable = false
-                    }
-
-                    "Array" -> {
-                        appendLine("$nullSafety.map { element ->").let { listOf("element") }
-                        appendElementValueExpression(0, "element")
-                        append(" }")
-
-                        currentCollectionTypeCategory = "List"
-                        isCurrentExpressionMutable = false
+                        currentExpressionType = Map::class.createType(arguments = delegateType.arguments)
                     }
 
                     else -> error("Should not happen")
                 }
-
-
-
             }
 
-            if (isTargetCollectionMutable != isCurrentExpressionMutable
-                || currentCollectionTypeCategory != targetCollectionTypeCategory) {
-                if (isTargetCollectionMutable) {
-                    when (targetCollectionTypeCategory) {
-                        "List", "Collection" -> append("$nullSafety.toMutableList()")
-                        "Set" -> append("$nullSafety.toMutableSet()")
-                        "Map" -> append("$nullSafety.toMutableMap()")
-                        "Array" -> append("$nullSafety.toTypedArray()")
-                        else -> error("Should not happen")
-                    }
-                } else {
-                    when (targetCollectionTypeCategory) {
-                        "List", "Collection" -> append("$nullSafety.toList()")
-                        "Set" -> append("$nullSafety.toSet()")
-                        "Map" -> append("$nullSafety.toMap()")
-                        "Array" -> error("Should not happen")
-                        else -> error("Should not happen")
-                    }
+            val targetTypeName by lazy { targetType.toString().substringBefore("<") }
+            val currentExpressionTypeName = currentExpressionType.toString().substringBefore("<")
+            if (currentExpressionTypeName != targetTypeName) {
+
+                val conversionExpression = converters.firstNotNullOfOrNull { converter ->
+                    converter.convert(currentExpressionType, currentExpressionTypeName, targetType, targetTypeName)
+                } ?: error("Conversion rule not found for $currentExpressionTypeName -> $targetTypeName")
+
+                if (conversionExpression.isNotEmpty()) {
+                    appendLine("$nullSafety.$conversionExpression")
                 }
             }
             if (isDelegateNullable && !isTargetNullable) {
@@ -156,5 +135,4 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
         }
         getterBuilder.addStatement(returnStmt, *returnStmtParams.toTypedArray())
     }
-
 }

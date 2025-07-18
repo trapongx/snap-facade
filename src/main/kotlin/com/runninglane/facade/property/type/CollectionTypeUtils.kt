@@ -20,7 +20,8 @@ internal object CollectionTypeUtils {
         MutableSet::class,
         MutableMap::class,
         MutableCollection::class,
-        Array::class
+        Array::class,
+        ArrayList::class
     ).flatMap { listOf(it.qualifiedName, it.java.canonicalName) }.toSet()
 
     /**
@@ -91,6 +92,7 @@ internal object CollectionTypeUtils {
                 returnTypeStr.contains("kotlin.collections.MutableSet") ||
                 returnTypeStr.contains("kotlin.collections.MutableMap") ||
                 returnTypeStr.contains("kotlin.collections.MutableCollection") ||
-                returnTypeStr.contains("kotlin.Array")
+                returnTypeStr.contains("kotlin.Array") ||
+                returnTypeStr.contains("kotlin.ArrayList")
     }
 }

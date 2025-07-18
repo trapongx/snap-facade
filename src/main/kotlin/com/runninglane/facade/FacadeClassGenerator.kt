@@ -16,10 +16,10 @@ class FacadeClassGenerator(
     private val propertyBuilder: PropertyBuilder = PropertyBuilder(annotationForPropertyInheriting)
 
     fun generate(targetClass: KClass<*>, delegateClass: KClass<*>): KClass<*> {
-        val facadeClassName = namingStrategy.buildClassName(targetClass.java, delegateClass.java)
-        val facadePackageName = namingStrategy.buildPackageName(targetClass.java, delegateClass.java)
-        val src = generateSourceCode(targetClass, delegateClass, facadeClassName, facadePackageName)
         return try {
+            val facadeClassName = namingStrategy.buildClassName(targetClass.java, delegateClass.java)
+            val facadePackageName = namingStrategy.buildPackageName(targetClass.java, delegateClass.java)
+            val src = generateSourceCode(targetClass, delegateClass, facadeClassName, facadePackageName)
             CompilationSession.compileAndLoad(src, facadeClassName, facadePackageName).kotlin
         } catch (t: Throwable) {
             throw FacadeGenerationException("Error compiling generated source", t)
