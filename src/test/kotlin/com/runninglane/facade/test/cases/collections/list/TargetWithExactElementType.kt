@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.elements.list
+package com.runninglane.facade.test.cases.collections.list
 
 interface TargetWithExactElementType {
     val listMutableToMutable: MutableList<Delegate.Element>

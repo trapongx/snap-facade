@@ -1,4 +1,4 @@
-package com.runninglane.facade.test.cases.elements.set
+package com.runninglane.facade.test.cases.collections.set
 
 interface TargetWithExactElementType {
     val setMutableToMutable: MutableSet<Delegate.Element>
