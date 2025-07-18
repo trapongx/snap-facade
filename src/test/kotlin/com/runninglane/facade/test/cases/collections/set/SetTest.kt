@@ -6,7 +6,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 
-class CollectionTest {
+class SetTest {
     private fun createDelegate() = Delegate(
         setMutableToMutable = mutableSetOf(Delegate.Element("A")),
         setImmutableToMutable = setOf(Delegate.Element("B")),
