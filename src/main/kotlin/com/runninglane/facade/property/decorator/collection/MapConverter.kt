@@ -30,6 +30,7 @@ internal object MapConverter : Converter {
         "kotlin.collections.Map" to "toMap()",
         "kotlin.collections.MutableMap" to "toMutableMap()",
         "kotlin.collections.HashMap" to "let { HashMap(it) }",
+        "java.util.HashMap" to "let { HashMap(it) }",
         "java.util.TreeMap" to "let { java.util.TreeMap(it) }",
         "java.util.SortedMap" to "let { java.util.TreeMap(it) }"
     ).mapValues { (_, v) -> v to emptyList<String>() }

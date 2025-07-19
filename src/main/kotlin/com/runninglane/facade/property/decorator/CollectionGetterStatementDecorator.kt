@@ -5,8 +5,10 @@ import com.runninglane.facade.property.decorator.collection.MapConverter
 import com.runninglane.facade.property.type.CollectionTypeUtils
 import com.runninglane.facade.property.type.TypeNameResolver
 import com.squareup.kotlinpoet.FunSpec
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.createType
+import kotlin.reflect.jvm.jvmErasure
 
 internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
 
@@ -14,13 +16,15 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
 
     override fun decorate(
         targetProperty: KProperty1<*, *>,
+        targetTypeParams: Map<String, KClass<*>>,
         delegateProperty: KProperty1<*, *>,
+        delegateTypeParams: Map<String, KClass<*>>,
         getterBuilder: FunSpec.Builder
     ) {
         val targetType = targetProperty.returnType
         val delegateType = delegateProperty.returnType
 
-        val targetCollectionTypeCategory = CollectionTypeUtils.getCollectionTypeCategory(targetType)
+        val targetCollectionTypeCategory = CollectionTypeUtils.getCollectionTypeCategory(targetType.jvmErasure)
 
         val isDelegateNullable = delegateType.isMarkedNullable
         val isTargetNullable = targetType.isMarkedNullable

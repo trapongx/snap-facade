@@ -17,7 +17,8 @@ class GenericTypeTest {
     @Test
     fun `should create correct non-generic facade from generic delegate type`() {
         val delegate = DelegateWithTypeParam("A")
-        val facade = FacadeFactory.default.from(delegate).to(Target::class)
+        val facade = FacadeFactory.default.from(delegate, mapOf("T" to String::class))
+            .to(Target::class)
 
         assertThat(facade.t).isEqualTo("A")
     }
@@ -25,7 +26,8 @@ class GenericTypeTest {
     @Test
     fun `should create correct generic facade from non-generic delegate type`() {
         val delegate = Delegate("A")
-        val facade = FacadeFactory.default.from(delegate).to(TargetWithTypeParam::class)
+        val facade = FacadeFactory.default.from(delegate)
+            .to(TargetWithTypeParam::class, mapOf("T" to String::class))
 
         assertThat(facade.t).isEqualTo("A")
     }
@@ -33,7 +35,8 @@ class GenericTypeTest {
     @Test
     fun `should create correct generic facade from generic delegate type`() {
         val delegate = DelegateWithTypeParam("A")
-        val facade = FacadeFactory.default.from(delegate).to(TargetWithTypeParam::class)
+        val facade = FacadeFactory.default.from(delegate, mapOf("T" to String::class))
+            .to(TargetWithTypeParam::class, mapOf("T" to String::class))
 
         assertThat(facade.t).isEqualTo("A")
     }

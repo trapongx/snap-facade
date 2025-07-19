@@ -62,7 +62,9 @@ internal object CollectionConverter : Converter {
         "kotlin.collections.MutableSet" to expressionWithDistinctCheck("it.toMutableSet()"),
         "kotlin.collections.Set" to expressionWithDistinctCheck("it.toSet()"),
         "kotlin.collections.HashSet" to expressionWithDistinctCheck("it.toHashSet()"),
+        "java.util.HashSet" to expressionWithDistinctCheck("it.toHashSet()"),
         "kotlin.collections.LinkedHashSet" to expressionWithDistinctCheck("LinkedHashSet(it)"),
+        "java.util.LinkedHashSet" to expressionWithDistinctCheck("LinkedHashSet(it)"),
         "java.util.SortedSet" to expressionWithDistinctCheck("java.util.TreeSet(it)"),
         "java.util.TreeSet" to expressionWithDistinctCheck("java.util.TreeSet(it)")
     )
@@ -71,7 +73,9 @@ internal object CollectionConverter : Converter {
         "kotlin.collections.MutableSet" to "toMutableSet()",
         "kotlin.collections.Set" to "toSet()",
         "kotlin.collections.HashSet" to "toHashSet()",
+        "java.util.HashSet" to "toHashSet()",
         "kotlin.collections.LinkedHashSet" to "let { LinkedHashSet(it) }",
+        "java.util.LinkedHashSet" to "let { LinkedHashSet(it) }",
         "java.util.SortedSet" to "let { java.util.TreeSet(it) }",
         "java.util.TreeSet" to "let { java.util.TreeSet(it) }"
     ).mapValues { (_, v) -> v to emptyList<String>() }

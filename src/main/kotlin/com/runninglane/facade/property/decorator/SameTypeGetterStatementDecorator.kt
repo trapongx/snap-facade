@@ -1,7 +1,9 @@
 package com.runninglane.facade.property.decorator
 
 import com.runninglane.facade.FacadeGenerationException
+import com.runninglane.facade.property.type.KTypeUtils
 import com.squareup.kotlinpoet.FunSpec
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmErasure
@@ -9,13 +11,15 @@ import kotlin.reflect.jvm.jvmErasure
 internal object SameTypeGetterStatementDecorator : GetterStatementDecorator {
     override fun decorate(
         targetProperty: KProperty1<*, *>,
+        targetTypeParams: Map<String, KClass<*>>,
         delegateProperty: KProperty1<*, *>,
+        delegateTypeParams: Map<String, KClass<*>>,
         getterBuilder: FunSpec.Builder
     ) {
-        val targetType = targetProperty.returnType
-        val delegateType = delegateProperty.returnType
+        val targetType = KTypeUtils.resolve(targetProperty.returnType.classifier!!, targetTypeParams)
+        val delegateType = KTypeUtils.resolve(delegateProperty.returnType.classifier!!, delegateTypeParams)
 
-        if (!delegateType.jvmErasure.isSubclassOf(targetType.jvmErasure)) {
+        if (!delegateType.isSubclassOf(targetType)) {
             throw FacadeGenerationException("Cannot create facade property of type $targetType from $delegateType")
         }
 

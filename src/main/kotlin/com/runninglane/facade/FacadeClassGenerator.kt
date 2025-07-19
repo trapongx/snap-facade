@@ -4,8 +4,11 @@ import com.runninglane.facade.bytecode.compile.CompilationSession
 import com.runninglane.facade.naming.DefaultNamingStrategy
 import com.runninglane.facade.naming.NamingStrategy
 import com.runninglane.facade.property.PropertyBuilder
+import com.runninglane.facade.property.type.TypeNameResolver
 import com.squareup.kotlinpoet.*
 import kotlin.reflect.KClass
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 
@@ -15,11 +18,23 @@ class FacadeClassGenerator(
     private val namingStrategy: NamingStrategy = DefaultNamingStrategy()
     private val propertyBuilder: PropertyBuilder = PropertyBuilder(annotationForPropertyInheriting)
 
-    fun generate(targetClass: KClass<*>, delegateClass: KClass<*>): KClass<*> {
+    fun generate(
+        targetClass: KClass<*>,
+        targetTypeParams: Map<String, KClass<*>>,
+        delegateClass: KClass<*>,
+        delegateTypeParams: Map<String, KClass<*>>
+    ): KClass<*> {
         return try {
             val facadeClassName = namingStrategy.buildClassName(targetClass.java, delegateClass.java)
             val facadePackageName = namingStrategy.buildPackageName(targetClass.java, delegateClass.java)
-            val src = generateSourceCode(targetClass, delegateClass, facadeClassName, facadePackageName)
+            val src = generateSourceCode(
+                targetClass,
+                targetTypeParams,
+                delegateClass,
+                delegateTypeParams,
+                facadeClassName,
+                facadePackageName
+            )
             CompilationSession.compileAndLoad(src, facadeClassName, facadePackageName).kotlin
         } catch (t: Throwable) {
             throw FacadeGenerationException("Error compiling generated source", t)
@@ -28,15 +43,20 @@ class FacadeClassGenerator(
 
     private fun generateSourceCode(
         targetClass: KClass<*>,
+        targetTypeParams: Map<String, KClass<*>>,
         delegateClass: KClass<*>,
+        delegateTypeParams: Map<String, KClass<*>>,
         facadeClassName: String,
         facadePackageName: String
     ): String {
 
+        val resolvedDelegateTypeName = TypeNameResolver.resolve(delegateClass, delegateTypeParams)
+        val resolvedTargetTypeName = TypeNameResolver.resolve(targetClass, targetTypeParams)
+
         // Create a class that extends or implements the target class
         val delegatePropertySpec = PropertySpec.builder(
             "delegate",
-            delegateClass.asClassName(),
+            resolvedDelegateTypeName,
             KModifier.PUBLIC
         ).initializer("delegate").build()
 
@@ -49,7 +69,7 @@ class FacadeClassGenerator(
         val typeBuilder = TypeSpec.classBuilder(facadeClassName)
             .primaryConstructor(
                 FunSpec.constructorBuilder()
-                    .addParameter("delegate", delegateClass.asClassName())
+                    .addParameter("delegate", resolvedDelegateTypeName)
                     .addParameter("facadeFactory", FacadeFactory::class)
                     .build()
             )
@@ -58,9 +78,9 @@ class FacadeClassGenerator(
 
         // Make the class extend the target class
         if (targetClass.java.isInterface) {
-            typeBuilder.addSuperinterface(targetClass.asClassName())
+            typeBuilder.addSuperinterface(resolvedTargetTypeName)
         } else {
-            typeBuilder.superclass(targetClass.asClassName())
+            typeBuilder.superclass(resolvedTargetTypeName)
         }
 
         // Process properties of the target class
@@ -75,8 +95,14 @@ class FacadeClassGenerator(
 
             if (!shouldExclude) {
                 // Case 1: Property exists in delegate class - override it with delegation
-                propertyBuilder.build(targetClass, targetProperty, delegateClass, delegateProperty)
-                    ?.also { propertySpec -> typeBuilder.addProperty(propertySpec) }
+                propertyBuilder.build(
+                    targetClass,
+                    targetTypeParams,
+                    targetProperty,
+                    delegateClass,
+                    delegateTypeParams,
+                    delegateProperty
+                )?.also { propertySpec -> typeBuilder.addProperty(propertySpec) }
             }
         }
 

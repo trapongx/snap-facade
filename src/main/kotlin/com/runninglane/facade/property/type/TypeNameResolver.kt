@@ -6,8 +6,24 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.KTypeParameter
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.full.createType
 
 object TypeNameResolver {
+
+    fun resolve(`class`: KClass<*>, typeParamsMapByName: Map<String, KClass<*>>?) =
+        resolve(
+            `class`.createType(
+                `class`.typeParameters.map {
+                    KTypeProjection.invariant(
+                        typeParamsMapByName?.get(it.name)?.createType()
+                            ?: throw FacadeGenerationException("Type parameter ${it.name} is not mapped to a target type. Please provide a mapping for it.")
+                    )
+                }
+            ),
+            typeParamsMapByName
+        )
+
     /**
      * Resolves a KType to a TypeName, handling generic type parameters
      * If the type is a type parameter, it will be resolved using the typeParamsMapByName
