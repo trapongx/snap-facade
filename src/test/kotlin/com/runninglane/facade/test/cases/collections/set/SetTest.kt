@@ -1,12 +1,9 @@
 package com.runninglane.facade.test.cases.collections.set
 
 import com.runninglane.facade.FacadeFactory
-import com.runninglane.facade.FacadeGenerationException
 import com.runninglane.facade.from
-import com.runninglane.facade.test.cases.collections.set.invalid.DelegateWithArrayToSet
-import com.runninglane.facade.test.cases.collections.set.invalid.DelegateWithCollectionToSet
-import com.runninglane.facade.test.cases.collections.set.invalid.DelegateWithListToSet
-import com.runninglane.facade.test.cases.collections.set.invalid.TargetWithOtherTypeToSet
+import com.runninglane.facade.test.cases.collections.set.unique.DelegateWithOtherTypeToSet
+import com.runninglane.facade.test.cases.collections.set.unique.TargetWithOtherTypeToSet
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -52,26 +49,30 @@ class SetTest {
     }
 
     @Test
-    fun `should fail when trying to create facade from delegate with properties of type list, array, or collection to set type`() {
-        run {
-            val delegate = DelegateWithListToSet(otherTypeToSet = mutableListOf(Delegate.Element("A")))
-            assertThrows<FacadeGenerationException> {
-                FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
-            }
-        }
+    fun `should success converting unique collections to sets`() {
+        val delegate = DelegateWithOtherTypeToSet(
+            arrayToSet = arrayOf("A", "B"),
+            listToSet = listOf("A", "B"),
+            collectionToSet = setOf("A", "B")
+        )
+        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
 
-        run {
-            val delegate = DelegateWithCollectionToSet(otherTypeToSet = listOf(Delegate.Element("A")))
-            assertThrows<FacadeGenerationException> {
-                FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
-            }
-        }
+        assertThat(facade.arrayToSet.toList()).isEqualTo(listOf("A", "B"))
+        assertThat(facade.listToSet.toList()).isEqualTo(listOf("A", "B"))
+        assertThat(facade.collectionToSet.toList()).isEqualTo(listOf("A", "B"))
+    }
 
-        run {
-            val delegate = DelegateWithArrayToSet(otherTypeToSet = arrayOf(Delegate.Element("A")))
-            assertThrows<FacadeGenerationException> {
-                FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
-            }
-        }
+    @Test
+    fun `should fail converting non-unique collections to sets`() {
+        val delegate = DelegateWithOtherTypeToSet(
+            arrayToSet = arrayOf("A", "A"),
+            listToSet = listOf("A", "A"),
+            collectionToSet = listOf("A", "A"),
+        )
+        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
+
+        assertThrows<IllegalArgumentException> { facade.arrayToSet }
+        assertThrows<IllegalArgumentException> { facade.listToSet }
+        assertThrows<IllegalArgumentException> { facade.collectionToSet }
     }
 }

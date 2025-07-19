@@ -28,10 +28,13 @@ internal object MapConverter : Converter {
 
     private val map = mapOf(
         "kotlin.collections.Map" to "toMap()",
-        "kotlin.collections.MutableMap" to "toMutableMap()"
-    )
+        "kotlin.collections.MutableMap" to "toMutableMap()",
+        "kotlin.collections.HashMap" to "let { HashMap(it) }",
+        "java.util.TreeMap" to "let { java.util.TreeMap(it) }",
+        "java.util.SortedMap" to "let { java.util.TreeMap(it) }"
+    ).mapValues { (_, v) -> v to emptyList<String>() }
 
-    override fun convert(from: KType, fromStr: String, to: KType, toStr: String): String? {
+    override fun convert(from: KType, fromStr: String, to: KType, toStr: String): Pair<String, List<String>>? {
         return map[toStr]
     }
 }

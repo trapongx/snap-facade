@@ -10,5 +10,5 @@ internal interface Converter {
      * @param toStr, the string representation of `to`
      * @return converter function string, or null if this rule does not apply
      */
-    fun convert(from: KType, fromStr: String, to: KType, toStr: String): String?
+    fun convert(from: KType, fromStr: String, to: KType, toStr: String): Pair<String, List<String>>?
 }

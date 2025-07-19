@@ -21,25 +21,6 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
         val delegateType = delegateProperty.returnType
 
         val targetCollectionTypeCategory = CollectionTypeUtils.getCollectionTypeCategory(targetType)
-        val delegateCollectionTypeCategory = CollectionTypeUtils.getCollectionTypeCategory(delegateType)
-
-        if (targetCollectionTypeCategory != delegateCollectionTypeCategory) {
-            val canConvertWithoutLosingCharacteristics = when (delegateCollectionTypeCategory) {
-                "List" -> targetCollectionTypeCategory in listOf("Collection", "Array")
-                "Set" -> targetCollectionTypeCategory in listOf("List", "Collection", "Array")
-                "Collection" -> targetCollectionTypeCategory in listOf("List", "Array")
-                "Array" -> targetCollectionTypeCategory in listOf("List", "Collection")
-                else -> false
-            }
-            if (!canConvertWithoutLosingCharacteristics) {
-                error(buildString {
-                    append("Cannot create facade for property with different collection types.")
-                    append(" Property name: ${targetProperty.name},")
-                    append(" Target type: $targetCollectionTypeCategory,")
-                    append(" Delegate type: $delegateCollectionTypeCategory")
-                })
-            }
-        }
 
         val isDelegateNullable = delegateType.isMarkedNullable
         val isTargetNullable = targetType.isMarkedNullable
@@ -91,28 +72,22 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
                     }
                 }
 
-                when (targetCollectionTypeCategory) {
-                    "List", "Set", "Collection", "Array" -> {
-                        appendLine("$nullSafety.map { element ->").let { listOf("element") }
-                        appendElementValueExpression(0, "element")
-                        append(" }")
+                if (targetCollectionTypeCategory == "Map") {
+                    appendLine("$nullSafety.map { (key, value) ->").let { listOf("key", "value") }
+                    appendLine("Pair(")
+                    appendElementValueExpression(0, "key")
+                    appendLine(",")
+                    appendElementValueExpression(1, "value")
+                    appendLine(")")
+                    appendLine(" }$nullSafety.toMap()")
 
-                        currentExpressionType = List::class.createType(arguments = delegateType.arguments)
-                    }
+                    currentExpressionType = Map::class.createType(arguments = delegateType.arguments)
+                } else {
+                    appendLine("$nullSafety.map { element ->").let { listOf("element") }
+                    appendElementValueExpression(0, "element")
+                    append(" }")
 
-                    "Map" -> {
-                        appendLine("$nullSafety.map { (key, value) ->").let { listOf("key", "value") }
-                        appendLine("Pair(")
-                        appendElementValueExpression(0, "key")
-                        appendLine(",")
-                        appendElementValueExpression(1, "value")
-                        appendLine(")")
-                        appendLine(" }$nullSafety.toMap()")
-
-                        currentExpressionType = Map::class.createType(arguments = delegateType.arguments)
-                    }
-
-                    else -> error("Should not happen")
+                    currentExpressionType = List::class.createType(arguments = delegateType.arguments)
                 }
             }
 
@@ -120,12 +95,13 @@ internal object CollectionGetterStatementDecorator : GetterStatementDecorator {
             val currentExpressionTypeName = currentExpressionType.toString().substringBefore("<")
             if (currentExpressionTypeName != targetTypeName) {
 
-                val conversionExpression = converters.firstNotNullOfOrNull { converter ->
+                val (conversionExpression, params) = converters.firstNotNullOfOrNull { converter ->
                     converter.convert(currentExpressionType, currentExpressionTypeName, targetType, targetTypeName)
                 } ?: error("Conversion rule not found for $currentExpressionTypeName -> $targetTypeName")
 
                 if (conversionExpression.isNotEmpty()) {
                     appendLine("$nullSafety.$conversionExpression")
+                    returnStmtParams.addAll(params)
                 }
             }
             if (isDelegateNullable && !isTargetNullable) {
