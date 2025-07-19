@@ -6,7 +6,6 @@ import com.squareup.kotlinpoet.FunSpec
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.jvm.jvmErasure
 
 internal object SameTypeGetterStatementDecorator : GetterStatementDecorator {
     override fun decorate(

@@ -27,7 +27,7 @@ class ObjectTest {
                 long = 200L
             }
         )
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithObjectValues::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithObjectValues::class)
 
         assertSame(delegate.inner, facade.inner)
     }
@@ -45,7 +45,7 @@ class ObjectTest {
                 long = 200L
             )
         )
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithObjectValues::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithObjectValues::class)
 
         assertEquals(facade.inner?.id, delegate.inner.id)
         assertEquals(facade.inner?.boolean, delegate.inner.boolean)
@@ -69,7 +69,7 @@ class ObjectTest {
                 long = 200L
             )
         )
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithObjectValues::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithObjectValues::class)
 
         assertThrows<NullPointerException> { facade.inner?.int }
     }

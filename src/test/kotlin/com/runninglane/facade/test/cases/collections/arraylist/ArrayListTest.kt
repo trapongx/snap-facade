@@ -17,7 +17,7 @@ class ArrayListTest {
     @Test
     fun `should create correct facade from delegate with array list of exact element types`() {
         val delegate = createDelegate()
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithExactElementType::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithExactElementType::class)
 
         // Assert equality
         assertThat(facade.arrayToArray[0]).isSameAs(delegate.arrayToArray[0])
@@ -29,7 +29,7 @@ class ArrayListTest {
     @Test
     fun `should create correct facade from delegate with array list of different element types`() {
         val delegate = createDelegate()
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithDifferentElementType::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithDifferentElementType::class)
 
         // Assert equality
         assertThat(facade.arrayToArray[0].code).isEqualTo(delegate.arrayToArray[0].code).isEqualTo("A")

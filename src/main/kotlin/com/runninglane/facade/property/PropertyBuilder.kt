@@ -14,8 +14,6 @@ import com.squareup.kotlinpoet.TypeName
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty1
-import kotlin.reflect.KType
-import kotlin.reflect.KTypeParameter
 import kotlin.reflect.jvm.jvmErasure
 
 internal class PropertyBuilder(

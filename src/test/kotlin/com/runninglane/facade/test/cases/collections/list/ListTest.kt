@@ -17,7 +17,7 @@ class ListTest {
     @Test
     fun `should create correct facade from delegate with collections of exact element types`() {
         val delegate = createDelegate()
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithExactElementType::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithExactElementType::class)
 
         // Assert equality
         assertThat(facade.listMutableToMutable[0]).isSameAs(delegate.listMutableToMutable[0])
@@ -29,7 +29,7 @@ class ListTest {
     @Test
     fun `should create correct facade from delegate with collections of different element types`() {
         val delegate = createDelegate()
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithDifferentElementType::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithDifferentElementType::class)
 
         // Assert equality
         assertThat(facade.listMutableToMutable[0].code).isEqualTo(delegate.listMutableToMutable[0].code).isEqualTo("A")

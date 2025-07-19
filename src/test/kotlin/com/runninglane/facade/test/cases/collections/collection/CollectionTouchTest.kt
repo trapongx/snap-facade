@@ -7,14 +7,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.*
 import kotlin.collections.ArrayDeque
-import kotlin.collections.Collection
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
-import kotlin.collections.LinkedHashSet
-import kotlin.collections.Map
-import kotlin.collections.listOf
-import kotlin.collections.mapOf
-import kotlin.collections.toList
 
 class CollectionTouchTest {
 
@@ -62,7 +54,7 @@ class CollectionTouchTest {
         val dummyCollection = listOf("1", "2", "3")
         val dummyMap = mapOf("1" to "1", "2" to "2", "3" to "3")
         val delegate = Delegate(dummyCollection, dummyMap)
-        val facade = FacadeFactory.Companion.default.from(delegate).to(Target::class)
+        val facade = FacadeFactory.default.from(delegate).to(Target::class)
 
         assertThat(facade.collectionToHashSet.toList()).isEqualTo(dummyCollection)
         assertThat(facade.collectionToLinkedHashSet.toList()).isEqualTo(dummyCollection)
@@ -86,7 +78,7 @@ class CollectionTouchTest {
         val dummyCollection = listOf("1", "2", "3", "2")
         val dummyMap = mapOf("1" to "1", "2" to "2", "3" to "3")
         val delegate = Delegate(dummyCollection, dummyMap)
-        val facade = FacadeFactory.Companion.default.from(delegate).to(Target::class)
+        val facade = FacadeFactory.default.from(delegate).to(Target::class)
 
         assertThrows<IllegalArgumentException> { facade.collectionToHashSet }
         assertThrows<IllegalArgumentException> { facade.collectionToLinkedHashSet }

@@ -7,8 +7,6 @@ import com.runninglane.facade.property.PropertyBuilder
 import com.runninglane.facade.property.type.TypeNameResolver
 import com.squareup.kotlinpoet.*
 import kotlin.reflect.KClass
-import kotlin.reflect.KTypeProjection
-import kotlin.reflect.full.createType
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 

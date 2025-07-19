@@ -12,11 +12,7 @@ import java.io.StringWriter
 import java.net.URI
 import java.net.URLClassLoader
 import java.nio.file.Files
-import javax.tools.DiagnosticCollector
-import javax.tools.JavaCompiler
-import javax.tools.JavaFileObject
-import javax.tools.SimpleJavaFileObject
-import javax.tools.ToolProvider
+import javax.tools.*
 
 object CompilationSession {
     val inMemory: Boolean = System.getProperty("snap-facade.compilation.in-memory")?.toBoolean() ?: true
@@ -88,7 +84,6 @@ object CompilationSession {
      * @param src The Kotlin source code to compile
      * @param className Name of the class to load after compilation
      * @param packageName Package of the class
-     * @param baseDir The base directory for compilation
      * @return Pair of (ClassLoader, output directory) for loading classes
      */
     private fun compileKotlin(src: String, className: String, packageName: String): Pair<ClassLoader, File> {
@@ -119,7 +114,7 @@ object CompilationSession {
             false
         )
 
-        val exitCode = compiler.exec(messageCollector, Services.Companion.EMPTY, arguments)
+        val exitCode = compiler.exec(messageCollector, Services.EMPTY, arguments)
         if (exitCode.code != 0) {
             // Get the source file for better error reporting
             val sourceContent = sourceFile.readText()
@@ -196,7 +191,6 @@ object CompilationSession {
      * @param src The Java source code to compile
      * @param className Name of the class to load after compilation
      * @param packageName Package of the class
-     * @param baseDir The base directory for compilation
      * @return Pair of (ClassLoader, output directory) for loading classes
      */
     private fun compileJava(src: String, className: String, packageName: String) {
@@ -269,7 +263,6 @@ object CompilationSession {
      * @param src The Kotlin source code to compile
      * @param className Name of the class to load after compilation
      * @param packageName Package of the class
-     * @param baseDir The base directory to use (ignored, will create a temp dir)
      * @return Pair of (ClassLoader, output directory) for loading classes
      */
     private fun compileKotlinInMemory(src: String, className: String, packageName: String) {
@@ -297,7 +290,7 @@ object CompilationSession {
             false
         )
 
-        val exitCode = compiler.exec(messageCollector, Services.Companion.EMPTY, arguments)
+        val exitCode = compiler.exec(messageCollector, Services.EMPTY, arguments)
         if (exitCode.code != 0) {
             throw kotlin.RuntimeException(
                 "Kotlin compilation failed with exit code $exitCode.\n" +
@@ -314,10 +307,9 @@ object CompilationSession {
      * @param src The Java source code to compile
      * @param className Name of the class to load after compilation
      * @param packageName Package of the class
-     * @param baseDir The base directory for output files
      * @return Pair of (ClassLoader, output directory) for loading classes
      */
-    private fun compileJavaInMemory(src: String, className: String, packageName: String) {
+    private fun compileJavaInMemory(src: String, className: String, @Suppress("unused") packageName: String) {
         // Create a diagnostic collector to capture compilation errors
         val diagnostics = DiagnosticCollector<JavaFileObject>()
 

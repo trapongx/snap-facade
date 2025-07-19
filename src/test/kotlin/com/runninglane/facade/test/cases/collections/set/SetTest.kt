@@ -20,7 +20,7 @@ class SetTest {
     @Test
     fun `should create correct facade from delegate with collections of exact element types`() {
         val delegate = createDelegate()
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithExactElementType::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithExactElementType::class)
 
         // Assert equality
         assertThat(facade.setMutableToMutable.elementAt(0)).isSameAs(delegate.setMutableToMutable.elementAt(0))
@@ -32,7 +32,7 @@ class SetTest {
     @Test
     fun `should create correct facade from delegate with collections of different element types`() {
         val delegate = createDelegate()
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithDifferentElementType::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithDifferentElementType::class)
 
         // Assert equality
         assertThat(facade.setMutableToMutable.elementAt(0).code).isEqualTo(delegate.setMutableToMutable.elementAt(0).code)
@@ -55,7 +55,7 @@ class SetTest {
             listToSet = listOf("A", "B"),
             collectionToSet = setOf("A", "B")
         )
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithOtherTypeToSet::class)
 
         assertThat(facade.arrayToSet.toList()).isEqualTo(listOf("A", "B"))
         assertThat(facade.listToSet.toList()).isEqualTo(listOf("A", "B"))
@@ -69,7 +69,7 @@ class SetTest {
             listToSet = listOf("A", "A"),
             collectionToSet = listOf("A", "A"),
         )
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithOtherTypeToSet::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithOtherTypeToSet::class)
 
         assertThrows<IllegalArgumentException> { facade.arrayToSet }
         assertThrows<IllegalArgumentException> { facade.listToSet }

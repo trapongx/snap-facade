@@ -4,7 +4,6 @@ import com.runninglane.facade.FacadeFactory
 import com.runninglane.facade.from
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import kotlin.collections.get
 
 
 class MapTest {
@@ -18,7 +17,7 @@ class MapTest {
     @Test
     fun `should create correct facade from delegate with maps of exact element types`() {
         val delegate = createDelegate()
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithExactElementType::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithExactElementType::class)
 
         // Assert equality
         assertThat(facade.mapMutableToMutable["1"]).isSameAs(delegate.mapMutableToMutable["1"])
@@ -38,7 +37,7 @@ class MapTest {
     @Test
     fun `should create correct facade from delegate with maps of different element types`() {
         val delegate = createDelegate()
-        val facade = FacadeFactory.Companion.default.from(delegate).to(TargetWithDifferentElementType::class)
+        val facade = FacadeFactory.default.from(delegate).to(TargetWithDifferentElementType::class)
 
         // Assert equality
         assertThat(facade.mapMutableToMutable["1"]?.code).isEqualTo(delegate.mapMutableToMutable["1"]?.code).isEqualTo("A")

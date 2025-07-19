@@ -1,7 +1,6 @@
 package com.runninglane.facade.property.type
 
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
 
 internal object CollectionTypeUtils {
