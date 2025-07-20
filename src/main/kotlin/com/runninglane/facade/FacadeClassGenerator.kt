@@ -6,6 +6,7 @@ import com.runninglane.facade.naming.NamingStrategy
 import com.runninglane.facade.property.PropertyBuilder
 import com.runninglane.facade.property.type.TypeNameResolver
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import kotlin.reflect.KClass
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
@@ -55,7 +56,7 @@ class FacadeClassGenerator(
         val delegatePropertySpec = PropertySpec.builder(
             "delegate",
             resolvedDelegateTypeName,
-            KModifier.PUBLIC
+            KModifier.PUBLIC, KModifier.OVERRIDE
         ).initializer("delegate").build()
 
         val facadeFactoryPropertySpec = PropertySpec.builder(
@@ -73,6 +74,10 @@ class FacadeClassGenerator(
             )
             .addProperty(delegatePropertySpec)
             .addProperty(facadeFactoryPropertySpec)
+            .addSuperinterface(
+                Facade::class.asClassName()
+                    .parameterizedBy(resolvedDelegateTypeName)
+            )
 
         // Make the class extend the target class
         if (targetClass.java.isInterface) {
