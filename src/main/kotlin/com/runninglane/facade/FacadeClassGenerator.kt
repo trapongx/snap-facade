@@ -8,6 +8,7 @@ import com.runninglane.facade.property.type.TypeNameResolver
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import kotlin.reflect.KClass
+import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 
@@ -94,7 +95,10 @@ class FacadeClassGenerator(
 
         // Process properties of the target class
         val targetProperties = targetClass.memberProperties
-        val delegateProperties = delegateClass.memberProperties.associateBy { it.name }
+            .filter { !it.isFinal && it.visibility in listOf(KVisibility.PUBLIC, KVisibility.PROTECTED) }
+        val delegateProperties = delegateClass.memberProperties
+            .filter { it.visibility == KVisibility.PUBLIC }
+            .associateBy { it.name }
 
         for (targetProperty in targetProperties) {
             val delegateProperty = delegateProperties[targetProperty.name]
