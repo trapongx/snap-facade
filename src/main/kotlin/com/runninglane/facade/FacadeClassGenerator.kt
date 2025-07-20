@@ -11,6 +11,8 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 
+private typealias FacadeAnnotation = com.runninglane.facade.annotation.Facade
+
 class FacadeClassGenerator(
     val annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet()
 ) {
@@ -78,6 +80,10 @@ class FacadeClassGenerator(
                 Facade::class.asClassName()
                     .parameterizedBy(resolvedDelegateTypeName)
             )
+            .addAnnotation(AnnotationSpec.builder(FacadeAnnotation::class)
+                .addMember("delegateClass = %T::class", delegateClass.java)
+                .addMember("targetClass = %T::class", targetClass.java)
+                .build())
 
         // Make the class extend the target class
         if (targetClass.java.isInterface) {
