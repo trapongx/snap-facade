@@ -29,9 +29,17 @@ class FacadeClassGenerator(
         delegateClass: KClass<*>,
         delegateTypeParams: Map<String, KClass<*>>
     ): KClass<*> {
-        return try {
+        try {
             val facadeClassName = namingStrategy.buildClassName(targetClass.java, delegateClass.java)
             val facadePackageName = namingStrategy.buildPackageName(targetClass.java, delegateClass.java)
+
+            try {
+                // In case static codegen is used, the class might already exist
+                return Class.forName("$facadePackageName.$facadeClassName").kotlin
+            } catch (_: ClassNotFoundException) {
+                // As there's no existing class, we will go on generating it
+            }
+
             val src = generateSourceCode(
                 targetClass,
                 targetTypeParams,
@@ -40,7 +48,8 @@ class FacadeClassGenerator(
                 facadeClassName,
                 facadePackageName
             )
-            compiler.compileAndLoadClass(
+
+            return compiler.compileAndLoadClass(
                 sourceCode = src,
                 packageName = facadePackageName,
                 className = facadeClassName
