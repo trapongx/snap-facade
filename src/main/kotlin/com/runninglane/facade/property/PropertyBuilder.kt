@@ -17,7 +17,7 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.jvmErasure
 
 internal class PropertyBuilder(
-    val annotationForPropertyInheriting: Set<KClass<Annotation>>
+    val annotationForPropertyInheriting: Set<KClass<out Annotation>>
 ) {
     fun build(
         targetClass: KClass<*>,

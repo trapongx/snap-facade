@@ -17,7 +17,7 @@ import kotlin.reflect.full.memberProperties
 private typealias FacadeAnnotation = com.runninglane.facade.annotation.Facade
 
 class FacadeClassGenerator(
-    val annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet(),
+    val annotationForPropertyInheriting: Set<KClass<out Annotation>> = emptySet(),
     val namingStrategy: NamingStrategy = DefaultNamingStrategy(),
     val compiler: CodeCompiler = KotlinCodeCompiler()
 ) {
