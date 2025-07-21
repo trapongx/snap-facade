@@ -1,6 +1,7 @@
 package com.runninglane.facade
 
 import com.runninglane.facade.bytecode.compile.CompilationSession
+import com.runninglane.facade.exception.FacadeGenerationException
 import com.runninglane.facade.naming.DefaultNamingStrategy
 import com.runninglane.facade.naming.NamingStrategy
 import com.runninglane.facade.property.PropertyBuilder

@@ -1,6 +1,6 @@
 package com.runninglane.facade.property.decorator
 
-import com.runninglane.facade.FacadeGenerationException
+import com.runninglane.facade.exception.FacadeGenerationException
 import com.runninglane.facade.property.type.KTypeUtils
 import com.squareup.kotlinpoet.FunSpec
 import kotlin.reflect.KClass

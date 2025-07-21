@@ -1,6 +1,6 @@
 package com.runninglane.facade.property.type
 
-import com.runninglane.facade.FacadeGenerationException
+import com.runninglane.facade.exception.FacadeGenerationException
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import kotlin.reflect.KClass
