@@ -6,7 +6,7 @@ class FacadeFactory(
     val facadeClassGenerator: FacadeClassGenerator = FacadeClassGenerator()
 ) {
 
-    constructor(annotationForPropertyInheriting: Set<KClass<Annotation>>) : this(
+    constructor(annotationForPropertyInheriting: Set<KClass<out Annotation>>) : this(
         FacadeClassGenerator(
             annotationForPropertyInheriting = annotationForPropertyInheriting
         )
