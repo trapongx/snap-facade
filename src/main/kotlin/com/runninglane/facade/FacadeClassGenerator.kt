@@ -1,6 +1,7 @@
 package com.runninglane.facade
 
-import com.runninglane.facade.bytecode.codegen.CompilationSession
+import com.runninglane.facade.bytecode.codegen.CodeCompiler
+import com.runninglane.facade.bytecode.codegen.KotlinCodeCompiler
 import com.runninglane.facade.exception.FacadeGenerationException
 import com.runninglane.facade.naming.DefaultNamingStrategy
 import com.runninglane.facade.naming.NamingStrategy
@@ -16,7 +17,8 @@ import kotlin.reflect.full.memberProperties
 private typealias FacadeAnnotation = com.runninglane.facade.annotation.Facade
 
 class FacadeClassGenerator(
-    val annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet()
+    val annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet(),
+    val compiler: CodeCompiler = KotlinCodeCompiler()
 ) {
     private val namingStrategy: NamingStrategy = DefaultNamingStrategy()
     private val propertyBuilder: PropertyBuilder = PropertyBuilder(annotationForPropertyInheriting)
@@ -38,7 +40,11 @@ class FacadeClassGenerator(
                 facadeClassName,
                 facadePackageName
             )
-            CompilationSession.compileAndLoad(src, facadeClassName, facadePackageName).kotlin
+            compiler.compileAndLoadClass(
+                sourceCode = src,
+                packageName = facadePackageName,
+                className = facadeClassName
+            )
         } catch (t: Throwable) {
             throw FacadeGenerationException("Error compiling generated source", t)
         }
