@@ -3,10 +3,14 @@ package com.runninglane.facade
 import kotlin.reflect.KClass
 
 class FacadeFactory(
-    annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet()
+    val facadeClassGenerator: FacadeClassGenerator = FacadeClassGenerator()
 ) {
 
-    private val facadeClassGenerator = FacadeClassGenerator(annotationForPropertyInheriting)
+    constructor(annotationForPropertyInheriting: Set<KClass<Annotation>>) : this(
+        FacadeClassGenerator(
+            annotationForPropertyInheriting = annotationForPropertyInheriting
+        )
+    )
 
     /**
      * Map of <Pair<targetClass, delegateClass>, facadeClass>.
