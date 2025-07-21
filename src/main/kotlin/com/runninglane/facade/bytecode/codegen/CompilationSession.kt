@@ -1,4 +1,4 @@
-package com.runninglane.facade.bytecode.compile
+package com.runninglane.facade.bytecode.codegen
 
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
@@ -12,7 +12,11 @@ import java.io.StringWriter
 import java.net.URI
 import java.net.URLClassLoader
 import java.nio.file.Files
-import javax.tools.*
+import javax.tools.DiagnosticCollector
+import javax.tools.JavaCompiler
+import javax.tools.JavaFileObject
+import javax.tools.SimpleJavaFileObject
+import javax.tools.ToolProvider
 
 object CompilationSession {
     val inMemory: Boolean = System.getProperty("snap-facade.compilation.in-memory")?.toBoolean() ?: true
@@ -114,7 +118,7 @@ object CompilationSession {
             false
         )
 
-        val exitCode = compiler.exec(messageCollector, Services.EMPTY, arguments)
+        val exitCode = compiler.exec(messageCollector, Services.Companion.EMPTY, arguments)
         if (exitCode.code != 0) {
             // Get the source file for better error reporting
             val sourceContent = sourceFile.readText()
@@ -290,7 +294,7 @@ object CompilationSession {
             false
         )
 
-        val exitCode = compiler.exec(messageCollector, Services.EMPTY, arguments)
+        val exitCode = compiler.exec(messageCollector, Services.Companion.EMPTY, arguments)
         if (exitCode.code != 0) {
             throw kotlin.RuntimeException(
                 "Kotlin compilation failed with exit code $exitCode.\n" +
