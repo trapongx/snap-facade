@@ -2,12 +2,15 @@ package com.runninglane.facade.bytecode.codegen.tools
 
 import com.runninglane.facade.FacadeClassGenerator
 import com.runninglane.facade.bytecode.codegen.CodeCompiler
+import com.runninglane.facade.naming.DefaultNamingStrategy
+import com.runninglane.facade.naming.NamingStrategy
 import java.io.File
 import kotlin.reflect.KClass
 
 class StaticKotlinCodeGenerator(
     outputPath: File,
     annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet(),
+    namingStrategy: NamingStrategy = DefaultNamingStrategy(),
 ) {
     private val compiler = object : CodeCompiler {
         override fun compileAndLoadClass(
@@ -24,7 +27,11 @@ class StaticKotlinCodeGenerator(
         }
     }
 
-    private val generator = FacadeClassGenerator(annotationForPropertyInheriting, compiler)
+    private val generator = FacadeClassGenerator(
+        annotationForPropertyInheriting,
+        namingStrategy = namingStrategy,
+        compiler = compiler
+    )
 
     fun generate(
         targetClass: KClass<*>,

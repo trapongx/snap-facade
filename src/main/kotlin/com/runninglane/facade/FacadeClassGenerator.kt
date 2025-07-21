@@ -18,9 +18,9 @@ private typealias FacadeAnnotation = com.runninglane.facade.annotation.Facade
 
 class FacadeClassGenerator(
     val annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet(),
+    val namingStrategy: NamingStrategy = DefaultNamingStrategy(),
     val compiler: CodeCompiler = KotlinCodeCompiler()
 ) {
-    private val namingStrategy: NamingStrategy = DefaultNamingStrategy()
     private val propertyBuilder: PropertyBuilder = PropertyBuilder(annotationForPropertyInheriting)
 
     fun generate(
