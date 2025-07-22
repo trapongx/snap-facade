@@ -5,8 +5,8 @@ import com.runninglane.facade.property.decorator.DifferentObjectTypeGetterStatem
 import com.runninglane.facade.property.decorator.SameTypeGetterStatementDecorator
 import com.runninglane.facade.property.type.CollectionTypeUtils
 import com.runninglane.facade.property.type.KTypeUtils
-import com.runninglane.facade.property.type.SimpleTypeUtils
 import com.runninglane.facade.property.type.TypeNameResolver
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
@@ -14,6 +14,7 @@ import com.squareup.kotlinpoet.TypeName
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty1
+import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmErasure
 
 internal class PropertyBuilder(
@@ -54,8 +55,7 @@ internal class PropertyBuilder(
                 CollectionTypeUtils.isCollectionType(targetPropertyType)
                     -> CollectionGetterStatementDecorator
 
-                !SimpleTypeUtils.isSimpleType(targetPropertyType) &&
-                        !areTypesCompatible(resolvedTargetPropertyTypeName, resolvedDelegatePropertyTypeName)
+                !areTypesCompatible(resolvedTargetPropertyTypeName, resolvedDelegatePropertyTypeName)
                     -> DifferentObjectTypeGetterStatementDecorator
 
                 else -> SameTypeGetterStatementDecorator
@@ -111,9 +111,43 @@ internal class PropertyBuilder(
 
     /**
      * Checks if two types are compatible for direct mapping
+     * 
+     * Types are compatible if:
+     * 1. They are the same type (ignoring nullability)
+     * 2. Or when dealing with class types, if the delegate type is assignable to the target type
      */
     private fun areTypesCompatible(targetTypeName: TypeName, delegateTypeName: TypeName): Boolean {
-        // If they're the same type (ignoring nullability), they're compatible for direct mapping
-        return targetTypeName.copy(nullable = false) == delegateTypeName.copy(nullable = false)
+        // First check if they're the same type (ignoring nullability)
+        if (targetTypeName.copy(nullable = false) == delegateTypeName.copy(nullable = false)) {
+            return true
+        }
+
+        // If we have class types, we need to check if delegate type is assignable to target type
+        val targetClass = resolveClassFromTypeName(targetTypeName)
+        val delegateClass = resolveClassFromTypeName(delegateTypeName)
+
+        if (targetClass != null && delegateClass != null) {
+            return delegateClass.isSubclassOf(targetClass)
+        }
+
+        return false
+    }
+
+    /**
+     * Tries to resolve a class from a TypeName
+     * This is a best-effort approach that works for ClassName instances
+     */
+    private fun resolveClassFromTypeName(typeName: TypeName): KClass<*>? {
+        return when (typeName) {
+            is ClassName -> {
+                try {
+                    val className = typeName.canonicalName
+                    Class.forName(className).kotlin
+                } catch (_: ClassNotFoundException) {
+                    null
+                }
+            }
+            else -> null
+        }
     }
 }

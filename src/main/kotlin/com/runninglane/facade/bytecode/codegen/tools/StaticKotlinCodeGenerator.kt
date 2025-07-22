@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
 
 class StaticKotlinCodeGenerator(
     outputPath: File,
-    annotationForPropertyInheriting: Set<KClass<Annotation>> = emptySet(),
+    annotationForPropertyInheriting: Set<KClass<out Annotation>> = emptySet(),
     namingStrategy: NamingStrategy = DefaultNamingStrategy(),
 ) {
     private val compiler = object : CodeCompiler {
