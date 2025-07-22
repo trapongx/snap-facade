@@ -114,6 +114,6 @@ internal class PropertyBuilder(
      */
     private fun areTypesCompatible(targetTypeName: TypeName, delegateTypeName: TypeName): Boolean {
         // If they're the same type (ignoring nullability), they're compatible for direct mapping
-        return targetTypeName == delegateTypeName
+        return targetTypeName.copy(nullable = false) == delegateTypeName.copy(nullable = false)
     }
 }
